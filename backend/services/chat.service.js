@@ -20,6 +20,11 @@ const processChat = async ({ context }) => {
     const uuid = context.chat.uuid || uuidv4();
     const filePath = path.resolve(context.root, `./messages/${uuid}.log`);
 
+    const dirPath = path.resolve(context.root, './messages');
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+
     let messages = getMessageHistory(filePath);
     messages.push({ role: 'user', content: context.chat.prompt });
 
