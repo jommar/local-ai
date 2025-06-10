@@ -6,7 +6,23 @@
       style="padding-bottom: 85px; padding-top: 75px"
     >
       <!-- Chat messages container -->
-      <div class="d-flex flex-column align-end w-100">
+      <div
+        class="h-100 w-100 d-flex flex-column align-center justify-center text-grey rounded-lg pa-6"
+        v-if="!messages.length"
+      >
+        <v-icon size="96" color="grey-lighten-1" class="mb-4">mdi-message-text-outline</v-icon>
+
+        <div class="text-center max-width-500">
+          <div class="text-h5 font-weight-medium mb-2">No conversations yet</div>
+          <div class="text-body-1 mb-1">It’s quiet in here… but that’s about to change.</div>
+          <div class="text-body-2 text-grey-darken-1">
+            Start your first message to begin a new conversation. Whether it's coding help, writing advice, or just
+            brainstorming ideas — I’ve got your back!
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex flex-column align-end w-100" v-else>
         <template v-for="(message, messageIndex) in messages" :key="messageIndex">
           <MarkDown
             class="mb-2 rounded-lg py-2 px-4"
