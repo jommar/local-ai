@@ -3,30 +3,11 @@
     <!-- Scrollable content -->
     <div
       class="h-100 overflow-y-auto d-flex flex-column justify-end px-4"
-      style="padding-bottom: 85px; padding-top: 55px"
+      style="padding-bottom: 85px; padding-top: 75px"
     >
-      <div
-        class="position-fixed top-0 left-0 right-0 px-4 py-2 bg-grey-darken-4 text-blue d-flex align-center justify-end"
-      >
-        <v-select
-          v-model="currentModel"
-          :items="[...models, { name: 'Get more models', model: 'get-more' }]"
-          item-title="name"
-          item-value="model"
-          density="compact"
-          hide-details
-          variant="outlined"
-          style="max-width: 200px"
-          @update:model-value="onModelChange"
-        />
-
-        <!-- new chat button -->
-        <v-btn icon="mdi-plus" class="ml-2" size="small" @click="newChat"></v-btn>
-      </div>
-
       <!-- Chat messages container -->
       <div class="d-flex flex-column align-end w-100">
-        <template v-for="(message, messageIndex) in messsages" :key="messageIndex">
+        <template v-for="(message, messageIndex) in messages" :key="messageIndex">
           <MarkDown
             class="mb-2 rounded-lg py-2 px-4"
             :class="[messageClasses[message.role]]"
@@ -72,9 +53,10 @@
 
 <script setup>
 import { ref } from 'vue';
+const { $bus } = useNuxtApp();
 
 const message = ref('');
-const messsages = ref([]);
+const messages = ref([]);
 const scrollAnchor = ref(null);
 const isFetching = ref(false);
 const models = ref([]);
@@ -89,10 +71,6 @@ const messageClasses = computed(() => {
   };
 });
 
-const newChat = () => {
-  window.location.href = '/chat';
-};
-
 const scrollToBottom = () => {
   nextTick(() => {
     scrollAnchor.value?.scrollIntoView({ behavior: 'smooth' });
@@ -104,17 +82,18 @@ const loadChatByUuid = async uuid => {
   const res = await api.get(`/chat/${uuid}`);
 
   if (!res.uuid || res.uuid !== uuid) return;
-  messsages.value = res.messages;
+  messages.value = res.messages;
   currentModel.value = res.model;
 };
 
 const addMessage = message => {
-  messsages.value.push(message);
+  messages.value.push(message);
   scrollToBottom();
 };
 
 const send = async () => {
   const uuid = useRoute().query.uuid;
+  const reloadChats = !messages.value.length;
 
   addMessage({ role: 'user', content: message.value });
 
@@ -132,15 +111,7 @@ const send = async () => {
   addMessage({ role: 'assistant', content: res.message.content });
 
   if (!uuid) useRouter().replace({ query: { uuid: res.uuid } });
-};
-
-const loadModels = async () => {
-  const res = await api.get('/models');
-  models.value = res;
-};
-
-const onModelChange = value => {
-  currentModel.value = value;
+  if (reloadChats) $bus.emit('chat:reload');
 };
 
 const handleKeydown = e => {
@@ -152,7 +123,7 @@ const handleKeydown = e => {
 
 onMounted(async () => {
   const uuid = useRoute().query.uuid;
-  await Promise.all([loadChatByUuid(uuid), loadModels()]);
+  await Promise.all([loadChatByUuid(uuid)]);
   scrollToBottom();
 });
 </script>

@@ -48,4 +48,27 @@ const getChatHistory = ({ context }) => {
   return { messages, uuid, model: context.model };
 };
 
-module.exports = { processChat, getChatHistory };
+const getChats = ({ context }) => {
+  const messagesDir = path.resolve(context.root, './messages');
+  const chats = fs.readdirSync(messagesDir);
+
+  return chats
+    .map(filename => {
+      const fullPath = path.join(messagesDir, filename);
+      const stats = fs.statSync(fullPath);
+
+      const clean = filename.replace('.log', '');
+      return {
+        text: clean.slice(0, 8),
+        value: clean,
+        updatedAt: stats.mtime,
+      };
+    })
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .map(chat => ({
+      ...chat,
+      updatedAt: chat.updatedAt,
+    }));
+};
+
+module.exports = { processChat, getChatHistory, getChats };

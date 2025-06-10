@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { processChat, getChatHistory } = require('../services/chat.service.js');
+const { processChat, getChatHistory, getChats } = require('../services/chat.service.js');
 
 router.post('/', async (req, res) => {
   const { prompt, uuid, model } = req.body || req.query;
@@ -24,6 +24,11 @@ router.post('/', async (req, res) => {
     console.error('❌ Chat route error:', err.message);
     res.status(500).send({ error: 'Failed to process chat.' });
   }
+});
+
+router.get('/get', (req, res) => {
+  const chats = getChats({ context: req.context });
+  res.send(chats);
 });
 
 router.get('/:uuid', async (req, res) => {
