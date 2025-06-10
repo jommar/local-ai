@@ -16,6 +16,21 @@ const saveMessageHistory = (filePath, messages) => {
   fs.writeFileSync(filePath, JSON.stringify(messages, null, 2), 'utf-8');
 };
 
+const withSystemRoles = ({ messages, context }) => {
+  const withSystemRoles = [...messages];
+  if (config?.prompts?.system) withSystemRoles.unshift({ role: 'system', content: config?.prompts?.system });
+  const filePath = path.resolve(context.root, `./settings/custom.log`);
+  const settings = fs.readFileSync(filePath, 'utf-8');
+  if (settings?.trim().length) {
+    withSystemRoles.unshift({
+      role: 'system',
+      content: `Known information about the user: ${settings}. Use these information to tailor your response.`,
+    });
+  }
+
+  return withSystemRoles;
+};
+
 const processChat = async ({ context }) => {
   try {
     const uuid = context.chat.uuid || uuidv4();
@@ -33,7 +48,7 @@ const processChat = async ({ context }) => {
     const response = await context.ollama.post('/chat', {
       model,
       stream: false,
-      messages: [{ role: 'system', content: config?.prompts?.system || '' }, ...messages],
+      messages: withSystemRoles({ context, messages }),
     });
 
     const { message } = response.data;

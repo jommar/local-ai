@@ -45,8 +45,11 @@
           @keydown="handleKeydown"
           max-rows="8"
         >
-          <template #append>
+          <template #append-inner>
             <v-btn color="primary" variant="text" icon="mdi-send" @click="send" />
+          </template>
+          <template #prepend>
+            <ChatTools />
           </template>
         </v-textarea>
       </v-container>

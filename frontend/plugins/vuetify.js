@@ -15,6 +15,9 @@ export default defineNuxtPlugin(app => {
       VTextarea: {
         variant: 'outlined',
       },
+      VSelect: {
+        variant: 'outlined',
+      },
     },
   });
   app.vueApp.use(vuetify);
