@@ -8,12 +8,14 @@
       density="compact"
       hide-details
       variant="outlined"
-      style="max-width: 200px"
+      style="max-width: 300px"
       @update:model-value="onModelChange"
     />
 
+    <v-btn icon="mdi-eye" class="ml-2" size="small" @click="viewAllModels"></v-btn>
+
     <!-- new chat button -->
-    <v-btn icon="mdi-plus" class="ml-2" size="small" @click="newChat"></v-btn>
+    <v-btn icon="mdi-file-plus" class="ml-2" size="small" @click="newChat"></v-btn>
   </div>
 </template>
 
@@ -42,6 +44,14 @@ const setCurrentModel = () => {
   }
 
   currentModel.value = localStorage.getItem('local-ai-model');
+};
+
+const viewAllModels = async () => {
+  const module = await import('@/components/chat/ModelsList.vue');
+
+  $bus.emit('dialog:open', {
+    component: markRaw(module.default),
+  });
 };
 onMounted(async () => {
   await getModels();

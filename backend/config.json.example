@@ -3,9 +3,167 @@
   "host": "http://localhost",
   "ollama": {
     "host": "http://localhost",
-    "port": "11434"
+    "port": "11434",
+    "models": [
+      {
+        "model": "Gemma 3",
+        "parameters": "1B",
+        "size": "815MB",
+        "download": "ollama run gemma3:1b"
+      },
+      {
+        "model": "Gemma 3",
+        "parameters": "4B",
+        "size": "3.3GB",
+        "download": "ollama run gemma3"
+      },
+      {
+        "model": "Gemma 3",
+        "parameters": "12B",
+        "size": "8.1GB",
+        "download": "ollama run gemma3:12b"
+      },
+      {
+        "model": "Gemma 3",
+        "parameters": "27B",
+        "size": "17GB",
+        "download": "ollama run gemma3:27b"
+      },
+      {
+        "model": "QwQ",
+        "parameters": "32B",
+        "size": "20GB",
+        "download": "ollama run qwq"
+      },
+      {
+        "model": "DeepSeek-R1",
+        "parameters": "7B",
+        "size": "4.7GB",
+        "download": "ollama run deepseek-r1"
+      },
+      {
+        "model": "DeepSeek-R1",
+        "parameters": "671B",
+        "size": "404GB",
+        "download": "ollama run deepseek-r1:671b"
+      },
+      {
+        "model": "Llama 4",
+        "parameters": "109B",
+        "size": "67GB",
+        "download": "ollama run llama4:scout"
+      },
+      {
+        "model": "Llama 4",
+        "parameters": "400B",
+        "size": "245GB",
+        "download": "ollama run llama4:maverick"
+      },
+      {
+        "model": "Llama 3.3",
+        "parameters": "70B",
+        "size": "43GB",
+        "download": "ollama run llama3.3"
+      },
+      {
+        "model": "Llama 3.2",
+        "parameters": "3B",
+        "size": "2.0GB",
+        "download": "ollama run llama3.2"
+      },
+      {
+        "model": "Llama 3.2",
+        "parameters": "1B",
+        "size": "1.3GB",
+        "download": "ollama run llama3.2:1b"
+      },
+      {
+        "model": "Llama 3.2 Vision",
+        "parameters": "11B",
+        "size": "7.9GB",
+        "download": "ollama run llama3.2-vision"
+      },
+      {
+        "model": "Llama 3.2 Vision",
+        "parameters": "90B",
+        "size": "55GB",
+        "download": "ollama run llama3.2-vision:90b"
+      },
+      {
+        "model": "Llama 3.1",
+        "parameters": "8B",
+        "size": "4.7GB",
+        "download": "ollama run llama3.1"
+      },
+      {
+        "model": "Llama 3.1",
+        "parameters": "405B",
+        "size": "231GB",
+        "download": "ollama run llama3.1:405b"
+      },
+      {
+        "model": "Phi 4",
+        "parameters": "14B",
+        "size": "9.1GB",
+        "download": "ollama run phi4"
+      },
+      {
+        "model": "Phi 4 Mini",
+        "parameters": "3.8B",
+        "size": "2.5GB",
+        "download": "ollama run phi4-mini"
+      },
+      {
+        "model": "Mistral",
+        "parameters": "7B",
+        "size": "4.1GB",
+        "download": "ollama run mistral"
+      },
+      {
+        "model": "Moondream 2",
+        "parameters": "1.4B",
+        "size": "829MB",
+        "download": "ollama run moondream"
+      },
+      {
+        "model": "Neural Chat",
+        "parameters": "7B",
+        "size": "4.1GB",
+        "download": "ollama run neural-chat"
+      },
+      {
+        "model": "Starling",
+        "parameters": "7B",
+        "size": "4.5GB",
+        "download": "ollama run starling-lm"
+      },
+      {
+        "model": "Code Llama",
+        "parameters": "7B",
+        "size": "3.8GB",
+        "download": "ollama run codellama"
+      },
+      {
+        "model": "Llama 2 Uncensored",
+        "parameters": "7B",
+        "size": "3.8GB",
+        "download": "ollama run llama2-uncensored"
+      },
+      {
+        "model": "LLaVA",
+        "parameters": "7B",
+        "size": "4.5GB",
+        "download": "ollama run llava"
+      },
+      {
+        "model": "Granite-3.3",
+        "parameters": "8B",
+        "size": "4.9GB",
+        "download": "ollama run granite3.3"
+      }
+    ]
   },
   "prompts": {
-    "system": ""
+    "system": "You're an AI assistant that will provide useful and accurate answers, you will double check your response before giving it."
   }
 }
