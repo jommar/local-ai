@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="w-100 h-100 pa-0" style="position: relative">
+  <v-container class="w-100 h-100 pa-0" style="position: relative">
     <!-- Scrollable content -->
     <div
       class="h-100 overflow-y-auto d-flex flex-column justify-end px-4"
@@ -11,7 +11,7 @@
           <MarkDown
             class="mb-2 rounded-lg py-2 px-4"
             :class="[messageClasses[message.role]]"
-            style="max-width: 70vw"
+            style="max-width: 75%"
             :content="message.content"
             v-if="message.role === 'assistant'"
           ></MarkDown>
@@ -19,7 +19,7 @@
             v-else
             class="mb-2 rounded-lg py-2 px-4"
             :class="[messageClasses[message.role]]"
-            style="max-width: 70vw; white-space: pre-wrap"
+            style="max-width: 75%; white-space: pre-wrap"
           >
             {{ message.content }}
           </div>
@@ -32,21 +32,24 @@
     </div>
 
     <!-- Fixed input bar -->
-    <div class="position-fixed bottom-0 left-0 right-0 px-4 py-2 bg-grey-darken-4">
-      <v-textarea
-        v-model="message"
-        label="Type a message..."
-        class="w-100"
-        hide-details
-        auto-grow
-        rows="1"
-        autocomplete="off"
-        @keydown="handleKeydown"
-      >
-        <template #append>
-          <v-btn icon="mdi-send" @click="send" />
-        </template>
-      </v-textarea>
+    <div class="position-fixed bottom-0 left-0 right-0 px-4 bg-grey-darken-4">
+      <v-container>
+        <v-textarea
+          v-model="message"
+          label="Type a message..."
+          class="w-100"
+          hide-details
+          auto-grow
+          rows="1"
+          autocomplete="off"
+          @keydown="handleKeydown"
+          max-rows="8"
+        >
+          <template #append>
+            <v-btn color="primary" variant="text" icon="mdi-send" @click="send" />
+          </template>
+        </v-textarea>
+      </v-container>
     </div>
   </v-container>
 </template>
