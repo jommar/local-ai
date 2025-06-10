@@ -31,8 +31,9 @@ const processChat = async ({ context }) => {
 
     if (config?.prompts?.system) messages.unshift({ role: 'system', content: config.prompts.system });
 
+    const model = context?.chat?.model || context?.model;
     const response = await context.ollama.post('/chat', {
-      model: context.model,
+      model,
       stream: false,
       messages,
     });
@@ -41,7 +42,7 @@ const processChat = async ({ context }) => {
     messages.push(message);
     saveMessageHistory(filePath, messages);
 
-    return { uuid, message, model: context.model };
+    return { uuid, message, model };
   } catch (error) {
     console.error('❌ Error in processChat:', error.message);
     throw error;
@@ -67,7 +68,6 @@ const getChats = ({ context }) => {
 
       const clean = filename.replace('.log', '');
       const isUuid = clean.length === 36 && clean.split('-')?.length === 5;
-      console.log(clean, isUuid);
       return {
         text: isUuid ? clean.slice(0, 8) : clean,
         value: clean,

@@ -10,6 +10,6 @@ const ollamaClient = axios.create({
 
 module.exports = (req, res, next) => {
   req.context.ollama = ollamaClient;
-  req.context.model = req.model || 'llama3.2:latest';
+  req.context.model = req?.context?.chat?.model || req?.model || 'llama3.2:latest';
   next();
 };

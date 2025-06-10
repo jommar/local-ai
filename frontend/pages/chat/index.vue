@@ -62,8 +62,6 @@ const isFetching = ref(false);
 const models = ref([]);
 const isSelectingModel = ref(false);
 
-const currentModel = ref('llama3.2:latest');
-
 const messageClasses = computed(() => {
   return {
     assistant: 'bg-blue-grey-darken-4 align-self-start',
@@ -83,7 +81,6 @@ const loadChatByUuid = async uuid => {
 
   if (!res.uuid || res.uuid !== uuid) return;
   messages.value = res.messages;
-  currentModel.value = res.model;
 };
 
 const addMessage = message => {
@@ -104,7 +101,6 @@ const send = async () => {
   const res = await api.post('/chat', {
     prompt,
     uuid,
-    model: currentModel.value,
   });
   isFetching.value = false;
 

@@ -2,7 +2,7 @@
   <div class="px-4 text-blue d-flex align-center justify-end">
     <v-select
       v-model="currentModel"
-      :items="[...models, { name: 'Get more models', model: 'get-more' }]"
+      :items="models"
       item-title="name"
       item-value="model"
       density="compact"
@@ -26,17 +26,25 @@ const newChat = () => {
 };
 const onModelChange = value => {
   currentModel.value = value;
+  setCurrentModel();
 };
 const getModels = async () => {
   const res = await api.get('/models');
-  if (res.length === 1) currentModel.value = res[0].model;
-  setCurrentModel();
   models.value = res;
+  setCurrentModel();
 };
 const setCurrentModel = () => {
-  return 'set model';
+  if (!currentModel.value) {
+    const model = models.value[0].model;
+    localStorage.setItem('local-ai-model', model);
+    currentModel.value = model;
+    return;
+  }
+
+  currentModel.value = localStorage.getItem('local-ai-model');
 };
-onMounted(() => {
-  getModels();
+onMounted(async () => {
+  await getModels();
+  setCurrentModel();
 });
 </script>
