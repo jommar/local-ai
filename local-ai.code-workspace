@@ -1,0 +1,28 @@
+{
+  "folders": [
+    {
+      "name": "frontend",
+      "path": "./frontend",
+    },
+    {
+      "name": "backend",
+      "path": "./backend",
+    },
+    {
+      "name": "root",
+      "path": ".",
+    },
+  ],
+  "extensions": {
+    "recommendations": [
+      "vue.volar",
+      "esbenp.prettier-vscode",
+      "eamodio.gitlens",
+      "ms-vscode-remote.remote-containers",
+      "digitalbrainstem.javascript-ejs-support",
+    ],
+  },
+  "settings": {
+    "editor.formatOnSave": true,
+  },
+}

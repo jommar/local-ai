@@ -1,5 +1,5 @@
-const routes = ["chat", "models"];
+const routes = ['chat', 'models'];
 
-module.exports = (app) => {
-  routes.forEach((r) => app.use(`/${r}`, require(`./${r}`)));
+module.exports = app => {
+  routes.forEach(r => app.use(`/${r}`, require(`./${r}`)));
 };

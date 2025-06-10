@@ -5,7 +5,8 @@
   "scripts": {
     "be": "npm run dev --prefix backend",
     "fe": "npm run dev --prefix frontend",
-    "start": "concurrently \"npm run be\" \"npm run fe\""
+    "start": "concurrently \"npm run be\" \"npm run fe\"",
+    "format": "prettier --write ."
   },
   "keywords": [],
   "author": "",
@@ -13,5 +14,8 @@
   "description": "",
   "dependencies": {
     "concurrently": "^9.1.2"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3"
   }
 }

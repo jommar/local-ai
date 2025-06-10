@@ -1,5 +1,5 @@
 const getOllamaModels = async ({ context }) => {
-  const modelsResponse = await context.ollama.get("/tags");
+  const modelsResponse = await context.ollama.get('/tags');
   return modelsResponse.data;
 };
 

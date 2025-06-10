@@ -5,9 +5,9 @@ services:
     image: ollama/ollama
     container_name: ollama
     ports:
-      - "11434:11434"
+      - '11434:11434'
     volumes:
       - /media/jommar/FA74BFBC74BF79C9/ollama-data:/root/.ollama
       - ./entrypoint.sh:/entrypoint.sh
-    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    entrypoint: ['/bin/bash', '/entrypoint.sh']
     restart: unless-stopped

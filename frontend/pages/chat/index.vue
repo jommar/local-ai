@@ -21,20 +21,12 @@
         />
 
         <!-- new chat button -->
-        <v-btn
-          icon="mdi-plus"
-          class="ml-2"
-          size="small"
-          @click="newChat"
-        ></v-btn>
+        <v-btn icon="mdi-plus" class="ml-2" size="small" @click="newChat"></v-btn>
       </div>
 
       <!-- Chat messages container -->
       <div class="d-flex flex-column align-end w-100">
-        <template
-          v-for="(message, messageIndex) in messsages"
-          :key="messageIndex"
-        >
+        <template v-for="(message, messageIndex) in messsages" :key="messageIndex">
           <MarkDown
             class="mb-2 rounded-lg py-2 px-4"
             :class="[messageClasses[message.role]]"
@@ -51,25 +43,15 @@
             {{ message.content }}
           </div>
         </template>
-        <div
-          class="mb-2 rounded-lg pa-2"
-          :class="messageClasses.assistant"
-          v-if="isFetching"
-        >
-          <v-progress-circular
-            v-if="isFetching"
-            indeterminate
-            color="primary"
-          ></v-progress-circular>
+        <div class="mb-2 rounded-lg pa-2" :class="messageClasses.assistant" v-if="isFetching">
+          <v-progress-circular v-if="isFetching" indeterminate color="primary"></v-progress-circular>
         </div>
         <div ref="scrollAnchor"></div>
       </div>
     </div>
 
     <!-- Fixed input bar -->
-    <div
-      class="position-fixed bottom-0 left-0 right-0 px-4 py-2 bg-grey-darken-4"
-    >
+    <div class="position-fixed bottom-0 left-0 right-0 px-4 py-2 bg-grey-darken-4">
       <v-textarea
         v-model="message"
         label="Type a message..."
@@ -89,35 +71,35 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref } from 'vue';
 
-const message = ref("");
+const message = ref('');
 const messsages = ref([]);
 const scrollAnchor = ref(null);
 const isFetching = ref(false);
 const models = ref([]);
 const isSelectingModel = ref(false);
 
-const currentModel = ref("llama3.2:latest");
+const currentModel = ref('llama3.2:latest');
 
 const messageClasses = computed(() => {
   return {
-    assistant: "bg-blue-grey-darken-4 align-self-start",
-    user: "bg-grey-darken-4 align-self-end",
+    assistant: 'bg-blue-grey-darken-4 align-self-start',
+    user: 'bg-grey-darken-4 align-self-end',
   };
 });
 
 const newChat = () => {
-  window.location.href = "/chat";
+  window.location.href = '/chat';
 };
 
 const scrollToBottom = () => {
   nextTick(() => {
-    scrollAnchor.value?.scrollIntoView({ behavior: "smooth" });
+    scrollAnchor.value?.scrollIntoView({ behavior: 'smooth' });
   });
 };
 
-const loadChatByUuid = async (uuid) => {
+const loadChatByUuid = async uuid => {
   if (!uuid) return;
   const res = await api.get(`/chat/${uuid}`);
 
@@ -126,7 +108,7 @@ const loadChatByUuid = async (uuid) => {
   currentModel.value = res.model;
 };
 
-const addMessage = (message) => {
+const addMessage = message => {
   messsages.value.push(message);
   scrollToBottom();
 };
@@ -134,35 +116,35 @@ const addMessage = (message) => {
 const send = async () => {
   const uuid = useRoute().query.uuid;
 
-  addMessage({ role: "user", content: message.value });
+  addMessage({ role: 'user', content: message.value });
 
   const prompt = message.value;
-  message.value = "";
+  message.value = '';
 
   isFetching.value = true;
-  const res = await api.post("/chat", {
+  const res = await api.post('/chat', {
     prompt,
     uuid,
     model: currentModel.value,
   });
   isFetching.value = false;
 
-  addMessage({ role: "assistant", content: res.message.content });
+  addMessage({ role: 'assistant', content: res.message.content });
 
   if (!uuid) useRouter().replace({ query: { uuid: res.uuid } });
 };
 
 const loadModels = async () => {
-  const res = await api.get("/models");
+  const res = await api.get('/models');
   models.value = res;
 };
 
-const onModelChange = (value) => {
+const onModelChange = value => {
   currentModel.value = value;
 };
 
-const handleKeydown = (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
+const handleKeydown = e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
     send();
   }

@@ -3,14 +3,14 @@
 </template>
 
 <script setup>
-import { marked } from "marked";
+import { marked } from 'marked';
 
 const props = defineProps({
   content: String,
 });
 
-const renderMarkdown = (markdownText) => {
-  return marked(markdownText?.trim() || "");
+const renderMarkdown = markdownText => {
+  return marked(markdownText?.trim() || '');
 };
 </script>
 
