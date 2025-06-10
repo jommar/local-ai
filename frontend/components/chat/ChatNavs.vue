@@ -1,5 +1,5 @@
 <template>
-  <div class="px-4 text-blue d-flex align-center justify-end">
+  <div class="px-4 text-blue d-flex align-center justify-end" v-if="models.length">
     <v-select
       v-model="currentModel"
       :items="models"
@@ -13,8 +13,6 @@
     />
 
     <v-btn icon="mdi-eye" class="ml-2" size="small" @click="viewAllModels"></v-btn>
-
-    <!-- new chat button -->
     <v-btn icon="mdi-file-plus" class="ml-2" size="small" @click="newChat"></v-btn>
   </div>
 </template>
@@ -33,19 +31,11 @@ const onModelChange = value => {
 const getModels = async () => {
   const res = await api.get('/models');
   models.value = res;
-  setCurrentModel();
 };
 const setCurrentModel = () => {
-  currentModel.value = localStorage.getItem(LOCALSTORAGE_KEYS.MODEL);
+  if (!currentModel.value) currentModel.value = localStorage.getItem(LOCALSTORAGE_KEYS.MODEL);
 
-  if (!currentModel.value) {
-    const model = models.value[0].model;
-    localStorage.setItem(LOCALSTORAGE_KEYS.MODEL, model);
-    currentModel.value = model;
-    return;
-  }
-
-  currentModel.value = localStorage.getItem(LOCALSTORAGE_KEYS.MODEL);
+  localStorage.setItem(LOCALSTORAGE_KEYS.MODEL, currentModel.value);
 };
 
 const viewAllModels = async () => {
