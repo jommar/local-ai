@@ -13,7 +13,7 @@ Before running the app, make sure you have the following installed on your machi
 After installing Ollama, download the `llama3.2` model by running:
 
 ```bash
-ollama run llama3.2
+ollama pull llama3.2
 ```
 
 ## 🚀 Running the App
@@ -53,6 +53,8 @@ Use the following example as a guide:
 
 Create a `.env` file inside the `frontend` directory:
 
+> 📝 Tip: You can rename `.env.example` to `.env`.
+
 ```
 frontend/.env
 ```
@@ -63,4 +65,4 @@ Example:
 NUXT_PORT=3122
 ```
 
-> 📝 Tip: You can copy from `.env.example` and modify as needed.
+You can now use the app at `http://localhost:3122/chat`
