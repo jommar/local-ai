@@ -6,6 +6,9 @@
         <v-btn v-if="path !== '/'" icon @click="$router.push('/')">
           <v-icon>mdi-home</v-icon>
         </v-btn>
+        <v-btn icon href="https://github.com/jommar/local-ai" target="_blank">
+          <v-icon>mdi-github</v-icon>
+        </v-btn>
         <v-spacer></v-spacer>
         <!-- only if /chat -->
         <ChatNavs v-if="path === '/chat'" />
