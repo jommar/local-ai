@@ -63,8 +63,10 @@ const getChats = ({ context }) => {
       const stats = fs.statSync(fullPath);
 
       const clean = filename.replace('.log', '');
+      const isUuid = clean.length === 36 && clean.split('-')?.length === 5;
+      console.log(clean, isUuid);
       return {
-        text: clean.slice(0, 8),
+        text: isUuid ? clean.slice(0, 8) : clean,
         value: clean,
         updatedAt: stats.mtime,
       };
@@ -76,4 +78,19 @@ const getChats = ({ context }) => {
     }));
 };
 
-module.exports = { processChat, getChatHistory, getChats };
+const deleteChat = ({ context, file }) => {
+  const messagesDir = path.resolve(context.root, './messages');
+  const filePath = path.join(messagesDir, `${file}.log`);
+
+  fs.unlinkSync(filePath);
+};
+
+const renameChat = ({ context, originalName, newName }) => {
+  const messagesDir = path.resolve(context.root, './messages');
+  const oldPath = path.join(messagesDir, `${originalName}.log`);
+  const newPath = path.join(messagesDir, `${newName}.log`);
+
+  fs.renameSync(oldPath, newPath);
+};
+
+module.exports = { processChat, getChatHistory, getChats, deleteChat, renameChat };

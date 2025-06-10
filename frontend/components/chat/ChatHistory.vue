@@ -11,6 +11,10 @@
         :title="chat.text"
         :subtitle="parseDate(chat.updatedAt)"
       >
+        <template #append>
+          <v-btn icon="mdi-pencil" size="x-small" variant="text" @click.stop="renameChat(chat)"></v-btn>
+          <v-btn icon="mdi-delete" size="x-small" variant="text" color="red" @click.stop="deleteChat(chat)"></v-btn>
+        </template>
       </v-list-item>
     </v-list>
   </div>
@@ -43,6 +47,25 @@ const parseDate = date => {
         hour: '2-digit',
         minute: '2-digit',
       });
+};
+
+const deleteChat = async chat => {
+  const isSelf = useRoute()?.query?.uuid === chat.value;
+  await api.delete(`/chat/${chat.value}`);
+  if (isSelf) {
+    window.location.href = `/chat`;
+    return;
+  }
+  await getChatHistory();
+};
+
+const renameChat = async chat => {
+  const module = await import('@/components/chat/RenameChat.vue');
+
+  $bus.emit('dialog:open', {
+    component: markRaw(module.default),
+    props: { chat },
+  });
 };
 
 onMounted(() => {

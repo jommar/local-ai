@@ -11,21 +11,37 @@
         <ChatHistory v-if="path === '/chat'" />
       </v-navigation-drawer>
       <NuxtPage class="h-100" />
+
+      <v-dialog v-model="dialog.show">
+        <component :is="dialog.component" v-bind="dialog.props" />
+      </v-dialog>
     </v-app>
   </NuxtLayout>
 </template>
 
 <script setup>
 const drawer = ref(false);
+const dialog = ref({});
 const { $bus } = useNuxtApp();
 
 const path = computed(() => {
   return useRoute().path;
 });
 
+const handleDialog = payload => {
+  if (!payload.component) return;
+  dialog.value.show = true;
+  dialog.value.component = payload.component;
+  dialog.value.props = payload.props;
+};
+
 onMounted(() => {
   $bus.on('drawer:toggle', () => {
     drawer.value = !drawer.value;
+  });
+  $bus.on('dialog:open', handleDialog);
+  $bus.on('dialog:close', () => {
+    dialog.value = { show: false };
   });
 });
 
