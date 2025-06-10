@@ -1,6 +1,11 @@
 <template>
   <v-card>
     <v-card-title>Models List</v-card-title>
+
+    <v-card-text>
+      <ChatSetupGuide />
+    </v-card-text>
+
     <v-card-text>
       <v-table>
         <thead>

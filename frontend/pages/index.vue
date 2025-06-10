@@ -58,7 +58,7 @@ const computedModels = computed(() => {
     };
   });
 });
-const checkModels = async () => {
+const getModels = async () => {
   models.value = await api.get('/models');
 };
 const setActiveModel = (model = null) => {
@@ -78,7 +78,7 @@ const showModels = async () => {
 };
 
 onMounted(async () => {
-  await checkModels();
+  await getModels();
   setActiveModel();
 });
 </script>
