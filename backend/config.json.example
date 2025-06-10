@@ -4,5 +4,8 @@
   "ollama": {
     "host": "http://localhost",
     "port": "11434"
+  },
+  "prompts": {
+    "system": ""
   }
 }

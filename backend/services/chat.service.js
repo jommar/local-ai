@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
+const config = require('../config.json');
 
 const getMessageHistory = filePath => {
   if (!fs.existsSync(filePath)) {
@@ -28,10 +29,12 @@ const processChat = async ({ context }) => {
     let messages = getMessageHistory(filePath);
     messages.push({ role: 'user', content: context.chat.prompt });
 
+    if (config?.prompts?.system) messages.unshift({ role: 'system', content: config.prompts.system });
+
     const response = await context.ollama.post('/chat', {
       model: context.model,
       stream: false,
-      messages: [{ role: 'system', content: 'You are a helpful assistant.' }, ...messages],
+      messages,
     });
 
     const { message } = response.data;
