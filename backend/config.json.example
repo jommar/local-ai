@@ -1,0 +1,8 @@
+{
+  "port": 3123,
+  "host": "http://localhost",
+  "ollama": {
+    "host": "http://localhost",
+    "port": "11434"
+  }
+}
