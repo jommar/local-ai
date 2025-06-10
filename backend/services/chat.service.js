@@ -26,16 +26,14 @@ const processChat = async ({ context }) => {
       fs.mkdirSync(dirPath, { recursive: true });
     }
 
-    let messages = getMessageHistory(filePath);
+    const messages = getMessageHistory(filePath);
     messages.push({ role: 'user', content: context.chat.prompt });
-
-    if (config?.prompts?.system) messages.unshift({ role: 'system', content: config.prompts.system });
 
     const model = context?.chat?.model || context?.model;
     const response = await context.ollama.post('/chat', {
       model,
       stream: false,
-      messages,
+      messages: [{ role: 'system', content: config?.prompts?.system || '' }, ...messages],
     });
 
     const { message } = response.data;
