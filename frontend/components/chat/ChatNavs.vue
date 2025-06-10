@@ -36,14 +36,16 @@ const getModels = async () => {
   setCurrentModel();
 };
 const setCurrentModel = () => {
+  currentModel.value = localStorage.getItem(LOCALSTORAGE_KEYS.MODEL);
+
   if (!currentModel.value) {
     const model = models.value[0].model;
-    localStorage.setItem('local-ai-model', model);
+    localStorage.setItem(LOCALSTORAGE_KEYS.MODEL, model);
     currentModel.value = model;
     return;
   }
 
-  currentModel.value = localStorage.getItem('local-ai-model');
+  currentModel.value = localStorage.getItem(LOCALSTORAGE_KEYS.MODEL);
 };
 
 const viewAllModels = async () => {

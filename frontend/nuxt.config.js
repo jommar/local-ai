@@ -21,4 +21,9 @@ export default defineNuxtConfig({
       },
     },
   },
+  app: {
+    head: {
+      title: 'LocalAI Chat',
+    },
+  },
 });

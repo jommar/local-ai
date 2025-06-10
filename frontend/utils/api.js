@@ -2,7 +2,7 @@
 const BASE_URL = 'http://localhost:3123';
 
 const request = async (method, url, data = null, options = {}) => {
-  const model = localStorage.getItem('local-ai-model') || 'llama3.2:latest';
+  const model = localStorage.getItem(LOCALSTORAGE_KEYS.MODEL) || 'llama3.2:latest';
 
   const config = {
     method,

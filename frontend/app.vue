@@ -2,7 +2,10 @@
   <NuxtLayout>
     <v-app>
       <v-app-bar>
-        <v-app-bar-nav-icon variant="text" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
+        <v-app-bar-nav-icon v-if="path !== '/'" variant="text" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
+        <v-btn v-if="path !== '/'" icon @click="$router.push('/')">
+          <v-icon>mdi-home</v-icon>
+        </v-btn>
         <v-spacer></v-spacer>
         <!-- only if /chat -->
         <ChatNavs v-if="path === '/chat'" />
