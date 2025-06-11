@@ -75,7 +75,6 @@
 
 <script setup>
 import { ref } from 'vue';
-const { $bus } = useNuxtApp();
 
 const message = ref('');
 const messages = ref([]);
@@ -129,7 +128,7 @@ const send = async () => {
   addMessage({ role: 'assistant', content: res.message.content });
 
   if (!uuid) useRouter().replace({ query: { uuid: res.uuid } });
-  if (reloadChats) $bus.emit('chat:reload');
+  if (reloadChats) bus.emit('chat:reload');
 };
 
 const handleKeydown = e => {

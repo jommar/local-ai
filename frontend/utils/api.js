@@ -1,7 +1,5 @@
-// utils/api.js
-const BASE_URL = 'http://localhost:3123';
-
 const request = async (method, url, data = null, options = {}) => {
+  const BASE_URL = useRuntimeConfig().public.apiBaseUrl;
   const model = localStorage.getItem(LOCALSTORAGE_KEYS.MODEL) || 'llama3.2:latest';
 
   const config = {

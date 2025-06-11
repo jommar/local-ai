@@ -26,4 +26,9 @@ export default defineNuxtConfig({
       title: 'LocalAI Chat',
     },
   },
+  runtimeConfig: {
+    public: {
+      apiBaseUrl: process.env.API_BASE_URL,
+    },
+  },
 });

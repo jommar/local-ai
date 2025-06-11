@@ -20,7 +20,6 @@
   </div>
 </template>
 <script setup>
-const { $bus } = useNuxtApp();
 const chats = ref([]);
 const getChatHistory = async () => {
   chats.value = [];
@@ -62,7 +61,7 @@ const deleteChat = async chat => {
 const renameChat = async chat => {
   const module = await import('@/components/chat/RenameChat.vue');
 
-  $bus.emit('dialog:open', {
+  bus.emit('dialog:open', {
     component: markRaw(module.default),
     props: { chat },
   });
@@ -70,6 +69,6 @@ const renameChat = async chat => {
 
 onMounted(() => {
   getChatHistory();
-  $bus.on('chat:reload', getChatHistory);
+  bus.on('chat:reload', getChatHistory);
 });
 </script>

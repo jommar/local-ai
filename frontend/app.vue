@@ -28,7 +28,6 @@
 <script setup>
 const drawer = ref(false);
 const dialog = ref({});
-const { $bus } = useNuxtApp();
 
 const path = computed(() => {
   return useRoute().path;
@@ -42,16 +41,19 @@ const handleDialog = payload => {
 };
 
 onMounted(() => {
-  $bus.on('drawer:toggle', () => {
+  bus.on('drawer:toggle', () => {
     drawer.value = !drawer.value;
   });
-  $bus.on('dialog:open', handleDialog);
-  $bus.on('dialog:close', () => {
+  bus.on('drawer:close', () => {
+    drawer.value = false;
+  });
+  bus.on('dialog:open', handleDialog);
+  bus.on('dialog:close', () => {
     dialog.value = { show: false };
   });
 });
 
 onBeforeUnmount(() => {
-  $bus.off('drawer:toggle');
+  bus.off('drawer:toggle');
 });
 </script>

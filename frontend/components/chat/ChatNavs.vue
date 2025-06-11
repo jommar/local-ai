@@ -18,7 +18,6 @@
 </template>
 
 <script setup>
-const { $bus } = useNuxtApp();
 const models = ref([]);
 const currentModel = ref('');
 const newChat = () => {
@@ -41,7 +40,7 @@ const setCurrentModel = () => {
 const viewAllModels = async () => {
   const module = await import('@/components/chat/ModelsList.vue');
 
-  $bus.emit('dialog:open', {
+  bus.emit('dialog:open', {
     component: markRaw(module.default),
   });
 };

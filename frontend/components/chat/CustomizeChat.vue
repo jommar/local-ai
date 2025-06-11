@@ -65,7 +65,6 @@
 
 <script setup>
 import { ref } from 'vue';
-const { $bus } = useNuxtApp();
 const responseLengthMap = {
   1: 'Short',
   2: 'Medium',
@@ -85,7 +84,7 @@ const form = ref({
 });
 
 const onClose = () => {
-  $bus.emit('dialog:close');
+  bus.emit('dialog:close');
 };
 const onSave = async () => {
   const toSave = {};
@@ -94,7 +93,7 @@ const onSave = async () => {
     toSave[i] = i === 'responseLength' ? responseLengthMap[form.value[i]] : form.value[i];
   }
   await api.post('/settings', toSave);
-  $bus.emit('dialog:close');
+  bus.emit('dialog:close');
 };
 const getSettings = async () => {
   const { data: r } = await api.get('/settings');

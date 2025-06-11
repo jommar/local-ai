@@ -11,20 +11,19 @@
   </v-card>
 </template>
 <script setup>
-const { $bus } = useNuxtApp();
 const name = ref(null);
 const props = defineProps(['chat']);
 
 const handleCancel = () => {
-  $bus.emit('dialog:close');
+  bus.emit('dialog:close');
 };
 
 const handleRename = async () => {
   const isSameChat = useRoute().query?.uuid === props.chat.value;
   const cleanName = name.value?.replaceAll(' ', '-'); // space to -
   await api.put(`/chat/${props.chat.value}`, { name: cleanName });
-  $bus.emit('chat:reload');
-  $bus.emit('dialog:close');
+  bus.emit('chat:reload');
+  bus.emit('dialog:close');
   useRoute().query;
 
   if (isSameChat) window.location.href = `/chat?uuid=${cleanName}`;

@@ -17,12 +17,10 @@
 </template>
 
 <script setup>
-const { $bus } = useNuxtApp();
-
 const onSystemInstructionsClick = async () => {
   const module = await import('@/components/chat/CustomizeChat.vue');
 
-  $bus.emit('dialog:open', {
+  bus.emit('dialog:open', {
     component: markRaw(module.default),
   });
 };
