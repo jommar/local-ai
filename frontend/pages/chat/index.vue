@@ -80,8 +80,6 @@ const message = ref('');
 const messages = ref([]);
 const scrollAnchor = ref(null);
 const isFetching = ref(false);
-const models = ref([]);
-const isSelectingModel = ref(false);
 
 const messageClasses = computed(() => {
   return {

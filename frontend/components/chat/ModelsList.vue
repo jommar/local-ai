@@ -35,7 +35,6 @@
 
 <script setup>
 const models = ref([]);
-const savedModels = ref([]);
 onMounted(async () => {
   models.value = await api.get('/models/list');
 });

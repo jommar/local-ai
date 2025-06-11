@@ -7,14 +7,12 @@ const request = async (method, url, data = null, options = {}) => {
     headers: {
       'Content-Type': 'application/json',
       ...(options.headers || {}),
+      model,
     },
     ...options,
   };
 
-  if (data) {
-    data.model = model;
-    config.body = JSON.stringify(data);
-  }
+  if (data) config.body = JSON.stringify(data);
 
   const res = await fetch(`${BASE_URL}${url}`, config);
   if (!res.ok) {

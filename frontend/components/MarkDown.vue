@@ -5,10 +5,6 @@
 <script setup>
 import { marked } from 'marked';
 
-const props = defineProps({
-  content: String,
-});
-
 const renderMarkdown = markdownText => {
   return marked(markdownText?.trim() || '');
 };
