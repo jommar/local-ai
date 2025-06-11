@@ -1,11 +1,9 @@
-// backend/eslint.config.js
-import js from '@eslint/js';
-import pluginNode from 'eslint-plugin-node';
-import pluginSecurity from 'eslint-plugin-security';
-import globals from 'globals';
-import { defineConfig } from 'eslint/config';
+// backend/eslint.config.cjs
+const js = require('@eslint/js');
+const pluginNode = require('eslint-plugin-node');
+const pluginSecurity = require('eslint-plugin-security');
+const globals = require('globals');
 
-// Trim buggy global keys
 function trimGlobals(globals) {
   const cleaned = {};
   for (const [key, value] of Object.entries(globals)) {
@@ -18,7 +16,7 @@ const combinedGlobals = trimGlobals({
   ...globals.node,
 });
 
-export default defineConfig([
+module.exports = [
   {
     files: ['**/*.js'],
     languageOptions: {
@@ -34,8 +32,8 @@ export default defineConfig([
     rules: {
       ...js.configs.recommended.rules,
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-      'no-console': 'off', // Logging is OK in backend
-      'security/detect-object-injection': 'off', // Optional: turn off if too strict
+      'no-console': 'off',
+      'security/detect-object-injection': 'off',
     },
   },
-]);
+];
