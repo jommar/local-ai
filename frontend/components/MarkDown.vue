@@ -4,6 +4,10 @@
 
 <script setup>
 import { marked } from 'marked';
+// eslint-disable-next-line no-unused-vars
+const props = defineProps({
+  content: String,
+});
 
 const renderMarkdown = markdownText => {
   return marked(markdownText?.trim() || '');
