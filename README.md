@@ -2,6 +2,12 @@
 
 A simple application that uses [Ollama](https://ollama.com/) to run the `llama3:latest` model locally.
 
+<div>
+  <img src="./assets/welcome.png" alt="Welcome" width="400" />
+  <img src="./assets/chat.png" alt="Welcome" width="400" />
+  <img src="./assets/history.png" alt="Welcome" width="400" />
+</div>
+
 ## 📦 Prerequisites
 
 Before running the app, make sure you have the following installed on your machine:
