@@ -1,3 +1,11 @@
-node_modules
+# Project-wide ignores
+node_modules/
 config.json
 **.log
+
+# Ignore everything in the docker directory…
+/docker/**
+
+# …but keep these two files
+!/docker/docker-compose.yml
+!/docker/README.md
