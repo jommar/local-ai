@@ -72,3 +72,7 @@ NUXT_PORT=3122
 ```
 
 You can now use the app at `http://localhost:3122/chat`
+
+# Running Ollama and OpenWebUI with Docker
+
+To run Ollama and OpenWebUI using Docker, follow the instructions provided in the README.md file located within the `./docker` directory. Be sure to carefully read and execute each step as outlined.
