@@ -1,5 +1,5 @@
 <template>
-  <div class="markdown-body" v-html="renderMarkdown(content)"></div>
+  <div v-if="content.length > 0" class="markdown-body" v-html="renderMarkdown(content)"></div>
 </template>
 
 <script setup>

@@ -8,8 +8,14 @@
       </template>
 
       <v-list>
-        <v-list-item @click="onSystemInstructionsClick">
-          <v-list-item-title>System Instructions</v-list-item-title>
+        <v-list-item
+          v-for="option in options"
+          :key="option.name"
+          @click="option.onClick"
+          :prepend-icon="option.icon"
+          :class="option.classNames"
+        >
+          <v-list-item-title>{{ option.name }}</v-list-item-title>
         </v-list-item>
       </v-list>
     </v-menu>
@@ -17,6 +23,16 @@
 </template>
 
 <script setup>
+const options = ref([
+  { name: 'System Instructions', onClick: () => onSystemInstructionsClick(), icon: 'mdi-information' },
+  { name: 'Think', onClick: () => onToggleThink() },
+]);
+const onToggleThink = () => {
+  const isThinking = localStorage.getItem(LOCALSTORAGE_KEYS.THINK) === 'true';
+  localStorage.setItem(LOCALSTORAGE_KEYS.THINK, !isThinking);
+  setThinkIcon();
+};
+
 const onSystemInstructionsClick = async () => {
   const module = await import('@/components/chat/CustomizeChat.vue');
 
@@ -24,4 +40,16 @@ const onSystemInstructionsClick = async () => {
     component: markRaw(module.default),
   });
 };
+
+const setThinkIcon = () => {
+  const isThinking = localStorage.getItem(LOCALSTORAGE_KEYS.THINK) === 'true';
+  const found = options.value.find(o => o.name === 'Think');
+  if (!found) return;
+  found.icon = isThinking ? 'mdi-check' : 'mdi-close';
+  found.classNames = `text-${isThinking ? 'green' : 'red'}-darken-1`;
+};
+
+onMounted(() => {
+  setThinkIcon();
+});
 </script>

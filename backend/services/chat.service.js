@@ -31,36 +31,86 @@ const withSystemRoles = ({ messages, context }) => {
   return withSystemRoles;
 };
 
-const processChat = async ({ context }) => {
-  try {
-    const uuid = context.chat.uuid || uuidv4();
-    const filePath = path.resolve(context.root, `./messages/${uuid}.log`);
+const _processChatStream = async ({ context, res, payload, uuid }) => {
+  // Set SSE headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
 
-    const dirPath = path.resolve(context.root, './messages');
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true });
+  const filePath = path.resolve(context.root, `./messages/${uuid}.log`);
+  const messages = getMessageHistory(filePath);
+
+  messages.push({ role: 'user', content: context.chat.prompt });
+
+  // Send streaming request
+  const apiRes = await context.ollama.post('/chat', payload, {
+    responseType: 'stream',
+  });
+
+  let assistantText = '';
+
+  // Handle stream chunks
+  apiRes.data.on('data', chunk => {
+    const lines = chunk.toString().split('\n').filter(Boolean);
+    for (const line of lines) {
+      try {
+        const parsed = JSON.parse(line);
+        const content = parsed.message?.content || '';
+        assistantText += content;
+        res.write(`data: ${JSON.stringify({ delta: content, uuid })}\n\n`);
+      } catch (err) {
+        console.error('Invalid JSON from Ollama:', line);
+      }
     }
+  });
 
-    const messages = getMessageHistory(filePath);
-    messages.push({ role: 'user', content: context.chat.prompt });
+  // Wait for stream to end
+  await new Promise((resolve, reject) => {
+    apiRes.data.on('end', resolve);
+    apiRes.data.on('error', reject);
+  });
 
-    const model = context?.chat?.model || context?.model;
-    const response = await context.ollama.post('/chat', {
-      model,
-      stream: false,
-      messages: withSystemRoles({ context, messages }),
-    });
-
-    const { message } = response.data;
-    messages.push(message);
-    saveMessageHistory(filePath, messages);
-
-    return { uuid, message, model };
-  } catch (error) {
-    console.error('❌ Error in processChat:', error.message);
-    throw error;
-  }
+  // Save response history and close connection
+  messages.push({ role: 'assistant', content: assistantText });
+  saveMessageHistory(filePath, messages);
+  res.end();
 };
+
+const processChat = async ({ context, res }) => {
+  // 1️⃣ Prepare UUID, file paths, and load history
+  const uuid = context.chat.uuid || uuidv4();
+  const dirPath = path.resolve(context.root, './messages');
+  const filePath = path.resolve(dirPath, `${uuid}.log`);
+  if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
+
+  const messages = getMessageHistory(filePath);
+  messages.push({ role: 'user', content: context.chat.prompt });
+
+  // 2️⃣ Build the payload
+  const model = context.chat.model || context.model;
+  const payload = {
+    model: context.chat.model,
+    messages: withSystemRoles({ context, messages }),
+    stream: context.chat.stream,
+    think: context.chat.think,
+  };
+
+  // 3️⃣ STREAMING branch
+  if (payload.stream) return await _processChatStream({ context, res, payload, uuid });
+
+  // 5️⃣ NON-STREAMING branch
+  const apiRes = await context.ollama.post('/chat', payload);
+  const { message } = apiRes.data;
+
+  messages.push(message);
+  saveMessageHistory(filePath, messages);
+
+  // 6️⃣ Finally return the JSON blob
+  return res.send({ uuid, message, model });
+};
+
+module.exports = { processChat };
 
 const getChatHistory = ({ context }) => {
   const { uuid } = context.chat;

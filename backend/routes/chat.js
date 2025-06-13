@@ -3,14 +3,16 @@ const router = express.Router();
 const { processChat, getChatHistory, getChats, deleteChat, renameChat } = require('../services/chat.service.js');
 
 router.post('/', async (req, res) => {
-  const { prompt, uuid, model } = req.body || req.query;
+  const { prompt, uuid } = req.body || req.query;
 
   if (!prompt) return res.status(400).send({ error: 'Prompt is required.' });
 
   req.context.chat = {
     prompt,
     uuid,
-    model,
+    model: req.headers.model,
+    think: req.headers.think === 'true',
+    stream: req.headers.stream === 'true',
   };
 
   if (!prompt) {
@@ -18,10 +20,11 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    const result = await processChat({ context: req.context });
-    res.send(result);
+    // const result = await processChat({ context: req.context, stream, res });
+    // res.send(result);
+    await processChat({ context: req.context, res });
   } catch (e) {
-    console.error(e);
+    console.error(e.message);
     res.status(500).send({ error: 'Failed to process chat.' });
   }
 });
