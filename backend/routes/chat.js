@@ -20,8 +20,6 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    // const result = await processChat({ context: req.context, stream, res });
-    // res.send(result);
     await processChat({ context: req.context, res });
   } catch (e) {
     console.error(e.message);
