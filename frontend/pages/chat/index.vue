@@ -29,10 +29,10 @@
             :class="[messageClasses[message.role]]"
             style="max-width: 75%"
             :content="message.content"
-            v-if="message.role === 'assistant'"
+            v-if="message.role === 'assistant' && message.content?.trim()"
           ></MarkDown>
           <div
-            v-else
+            v-if="message.role === 'user'"
             class="mb-2 rounded-lg py-2 px-4"
             :class="[messageClasses[message.role]]"
             style="max-width: 75%; white-space: pre-wrap"
@@ -40,8 +40,9 @@
             {{ message.content }}
           </div>
         </template>
-        <div class="mb-2 rounded-lg pa-2" :class="messageClasses.assistant" v-if="isFetching">
+        <div class="mb-2 rounded-lg pa-2" :class="messageClasses.assistant" v-if="isFetching || isThinking">
           <v-progress-circular v-if="isFetching" indeterminate color="primary"></v-progress-circular>
+          <div v-if="isThinking">Thinking...</div>
         </div>
         <div ref="scrollAnchor"></div>
       </div>
@@ -80,6 +81,7 @@ const message = ref('');
 const messages = ref([]);
 const scrollAnchor = ref(null);
 const isFetching = ref(false);
+const isThinking = ref(false);
 
 const messageClasses = computed(() => {
   return {
@@ -115,18 +117,32 @@ const send = async () => {
 
   const prompt = message.value;
   message.value = '';
-
   isFetching.value = true;
-  const res = await api.post('/chat', {
-    prompt,
-    uuid,
+
+  let assistantText = '';
+  addMessage({ role: 'assistant', content: '' });
+
+  await api.postStream('/chat', { prompt, uuid, stream: true }, r => {
+    const { delta, uuid } = r;
+
+    isFetching.value = false;
+    isThinking.value = delta === '';
+
+    useRouter().replace({ query: { uuid } });
+    assistantText += delta;
+    updateLastAssistantMessage(assistantText);
   });
+
   isFetching.value = false;
+  isThinking.value = false;
 
-  addMessage({ role: 'assistant', content: res.message.content });
-
-  if (!uuid) useRouter().replace({ query: { uuid: res.uuid } });
   if (reloadChats) bus.emit('chat:reload');
+};
+
+const updateLastAssistantMessage = content => {
+  const last = messages.value.findLast(m => m.role === 'assistant');
+  if (last) last.content = content;
+  scrollToBottom();
 };
 
 const handleKeydown = e => {
