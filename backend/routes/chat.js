@@ -13,6 +13,7 @@ router.post('/', async (req, res) => {
     model: req.headers.model,
     think: req.headers.think === 'true',
     stream: req.headers.stream === 'true',
+    systemMessages: JSON.parse(req.headers.systemmessages),
   };
 
   if (!prompt) {

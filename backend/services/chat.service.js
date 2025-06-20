@@ -17,10 +17,15 @@ const saveMessageHistory = (filePath, messages) => {
 };
 
 const withSystemRoles = ({ messages, context }) => {
+  const systemMessages = context.chat.systemMessages.map(content => ({ role: 'system', content }));
   const withSystemRoles = [...messages];
+
+  if (systemMessages?.length) withSystemRoles.unshift(...systemMessages);
   if (config?.prompts?.system) withSystemRoles.unshift({ role: 'system', content: config?.prompts?.system });
+
   const filePath = path.resolve(context.root, `./settings/custom.log`);
   const settings = fs.readFileSync(filePath, 'utf-8');
+
   if (settings?.trim().length) {
     withSystemRoles.unshift({
       role: 'system',
