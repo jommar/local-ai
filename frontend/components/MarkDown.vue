@@ -17,6 +17,16 @@ const renderMarkdown = markdownText => {
   return marked(markdownText?.trim() || '');
 };
 
+const enhanceLinks = () => {
+  const links = markdownContainer.value?.querySelectorAll('a');
+  if (!links) return;
+
+  links.forEach(link => {
+    link.setAttribute('target', '_blank');
+    link.setAttribute('rel', 'noopener noreferrer');
+  });
+};
+
 // Copy-to-clipboard logic
 const enhanceCodeBlocks = () => {
   const blocks = markdownContainer.value?.querySelectorAll('pre');
@@ -64,7 +74,10 @@ watch(
   () => props.content,
   newVal => {
     renderedHtml.value = renderMarkdown(newVal);
-    nextTick(() => enhanceCodeBlocks());
+    nextTick(() => {
+      enhanceCodeBlocks();
+      enhanceLinks();
+    });
   },
   { immediate: true }
 );
@@ -129,5 +142,45 @@ watch(
   color: #bbb;
   font-style: italic;
   margin: 1em 0;
+}
+
+/* Tables */
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-size: 0.9rem;
+  background-color: #263238;
+  color: #eee;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid #455a64;
+  padding: 0.5em 0.85em;
+  text-align: left;
+}
+
+.markdown-body th {
+  background-color: #37474f;
+  color: #90caf9;
+  font-weight: bold;
+}
+
+.markdown-body tr:nth-child(even) {
+  background-color: #2c3e50;
+}
+
+.markdown-body tr:hover {
+  background-color: #3a4a58;
+}
+
+/* Horizontal Rule */
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid #455a64;
+  margin: 2em 0;
 }
 </style>
