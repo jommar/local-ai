@@ -1,5 +1,5 @@
 <template>
-  <div class="px-4 text-blue d-flex align-center justify-end" v-if="models.length">
+  <div class="px-4 d-flex align-center justify-end" v-if="models.length">
     <v-select
       v-model="currentModel"
       :items="models"
@@ -10,16 +10,21 @@
       variant="outlined"
       style="max-width: 300px"
       @update:model-value="onModelChange"
-    />
+    >
+      <template #append>
+        <v-btn color="white" icon="mdi-file-plus" class="ml-2" size="small" @click="newChat"></v-btn>
+      </template>
+    </v-select>
 
-    <v-btn icon="mdi-eye" class="ml-2" size="small" @click="viewAllModels"></v-btn>
-    <v-btn icon="mdi-file-plus" class="ml-2" size="small" @click="newChat"></v-btn>
+    <v-btn v-if="showIcons" color="white" icon="mdi-eye" class="ml-2" size="small" @click="viewAllModels"></v-btn>
   </div>
 </template>
 
 <script setup>
 const models = ref([]);
 const currentModel = ref('');
+const showIcons = ref(false);
+
 const newChat = () => {
   window.location.href = '/chat';
 };
@@ -47,5 +52,8 @@ const viewAllModels = async () => {
 onMounted(async () => {
   await getModels();
   setCurrentModel();
+  bus.on('drawer:system:toggle', isOpen => {
+    showIcons.value = !isOpen;
+  });
 });
 </script>

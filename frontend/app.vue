@@ -13,14 +13,10 @@
         <!-- only if /chat -->
         <ChatNavs v-if="path === '/chat'" />
 
-        <v-app-bar-nav-icon
-          v-if="path === '/chat'"
-          variant="text"
-          @click.stop="sysDrawer = !sysDrawer"
-        ></v-app-bar-nav-icon>
+        <v-app-bar-nav-icon v-if="path === '/chat'" variant="text" @click.stop="toggleSysDrawer"></v-app-bar-nav-icon>
       </v-app-bar>
 
-      <v-navigation-drawer v-model="drawer">
+      <v-navigation-drawer v-model="drawer" temporary>
         <ChatHistory v-if="path === '/chat'" />
       </v-navigation-drawer>
 
@@ -40,7 +36,7 @@
 <script setup>
 const drawer = ref(false);
 const dialog = ref({});
-const sysDrawer = ref(false);
+const sysDrawer = ref(true);
 const isMounted = ref(false);
 
 const path = computed(() => {
@@ -52,6 +48,11 @@ const handleDialog = payload => {
   dialog.value.show = true;
   dialog.value.component = payload.component;
   dialog.value.props = payload.props;
+};
+
+const toggleSysDrawer = () => {
+  sysDrawer.value = !sysDrawer.value;
+  bus.emit('drawer:system:toggle', sysDrawer.value);
 };
 
 onMounted(() => {
