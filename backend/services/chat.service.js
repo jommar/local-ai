@@ -17,7 +17,9 @@ const saveMessageHistory = (filePath, messages) => {
 };
 
 const withSystemRoles = ({ messages, context }) => {
-  const systemMessages = context.chat.systemMessages.map(content => ({ role: 'system', content }));
+  const systemMessages = context.chat.systemMessages
+    .filter(m => m.enabled)
+    .map(content => ({ role: 'system', content: content.message }));
   const withSystemRoles = [...messages];
 
   if (systemMessages?.length) withSystemRoles.unshift(...systemMessages);
