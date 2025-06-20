@@ -79,6 +79,7 @@ const messages = ref([]);
 const scrollAnchor = ref(null);
 const isFetching = ref(false);
 const isThinking = ref(false);
+const autoScroll = ref(true);
 
 const messageClasses = computed(() => {
   return {
@@ -89,7 +90,7 @@ const messageClasses = computed(() => {
 
 const scrollToBottom = () => {
   nextTick(() => {
-    scrollAnchor.value?.scrollIntoView({ behavior: 'smooth' });
+    if (autoScroll.value) scrollAnchor.value?.scrollIntoView({ behavior: 'smooth' });
   });
 };
 
@@ -153,5 +154,13 @@ onMounted(async () => {
   const uuid = useRoute().query.uuid;
   await Promise.all([loadChatByUuid(uuid)]);
   scrollToBottom();
+  window.addEventListener('scroll', () => {
+    if (!document.documentElement.scrollHeight) return;
+
+    const buffer = 100;
+    const isAtBottom = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - buffer;
+
+    autoScroll.value = isAtBottom;
+  });
 });
 </script>

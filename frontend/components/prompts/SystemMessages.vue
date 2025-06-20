@@ -39,7 +39,7 @@
                 {{ item.message }}
               </v-list-item-title>
             </template>
-            <span>{{ item }}</span>
+            <span>{{ item.message }}</span>
           </v-tooltip>
 
           <template #append>
