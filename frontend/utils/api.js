@@ -3,6 +3,7 @@ const getHeaderData = () => {
     model: localStorage.getItem(LOCALSTORAGE_KEYS.MODEL) || 'llama3.2:latest',
     think: localStorage.getItem(LOCALSTORAGE_KEYS.THINK) || true,
     stream: localStorage.getItem(LOCALSTORAGE_KEYS.STREAM) || true,
+    systemmessages: localStorage.getItem(LOCALSTORAGE_KEYS.SYS_MESSAGES) || '[]',
   };
 };
 

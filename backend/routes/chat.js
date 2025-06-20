@@ -13,6 +13,7 @@ router.post('/', async (req, res) => {
     model: req.headers.model,
     think: req.headers.think === 'true',
     stream: req.headers.stream === 'true',
+    systemMessages: JSON.parse(req.headers.systemmessages),
   };
 
   if (!prompt) {
@@ -20,8 +21,6 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    // const result = await processChat({ context: req.context, stream, res });
-    // res.send(result);
     await processChat({ context: req.context, res });
   } catch (e) {
     console.error(e.message);
