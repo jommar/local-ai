@@ -3,6 +3,9 @@ const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const config = require('../config.json');
 
+const ALLOW_WEB_SEARCH = true;
+const SEARXNG_MAX_RESULTS = 5;
+
 const getMessageHistory = filePath => {
   if (!fs.existsSync(filePath)) {
     fs.writeFileSync(filePath, '', 'utf-8');
@@ -16,12 +19,13 @@ const saveMessageHistory = (filePath, messages) => {
   fs.writeFileSync(filePath, JSON.stringify(messages, null, 2), 'utf-8');
 };
 
-const withSystemRoles = ({ messages, context }) => {
+const withSystemRoles = ({ messages, context, searchResults = [] }) => {
   const systemMessages = context.chat.systemMessages
     .filter(m => m.enabled)
     .map(content => ({ role: 'system', content: content.message }));
   const withSystemRoles = [...messages];
 
+  if (searchResults?.length) withSystemRoles.unshift(...searchResults);
   if (systemMessages?.length) withSystemRoles.unshift(...systemMessages);
   if (config?.prompts?.system) withSystemRoles.unshift({ role: 'system', content: config?.prompts?.system });
 
@@ -84,6 +88,69 @@ const _processChatStream = async ({ context, res, payload, uuid }) => {
   res.end();
 };
 
+const _generateWebSearch = async ({ context, prevMessages }) => {
+  if (!ALLOW_WEB_SEARCH) return null;
+  try {
+    const { prompt } = context.chat;
+    const messages = [
+      {
+        role: 'system',
+        content:
+          'If you have sufficient data and can answer confidently, reply wil string NULL, if you need more data, reply with a string that the user can search the web with so it can be provided to you.',
+      },
+      {
+        role: 'system',
+        content:
+          'Your answer will strictly be in json format \n\n{"webSearch": "{searchQuery}"}\n\n or \n\n{"webSearch": "NULL"}\n\n other answers will not be accepted',
+      },
+      ...prevMessages,
+    ];
+    const res = await context.ollama.post('/chat', {
+      model: context.chat.model,
+      messages,
+      think: false,
+      stream: false,
+    });
+    const { content } = res?.data?.message;
+    const { webSearch } = JSON.parse(content);
+
+    if (webSearch === 'NULL') return null;
+
+    return webSearch;
+  } catch (e) {
+    return null;
+  }
+};
+
+const performWebSearch = async ({ context, toSearch }) => {
+  const { data } = await context.searxng.get('/search', {
+    params: {
+      q: toSearch,
+      format: 'json',
+    },
+  });
+
+  const results = data.results.slice(0, SEARXNG_MAX_RESULTS);
+  return results.map(r => ({
+    title: r.title,
+    url: r.url,
+    content: r.content,
+  }));
+};
+
+const withWebSearchRoles = async ({ context, messages }) => {
+  const toSearch = await _generateWebSearch({ context, prevMessages: messages });
+  if (!toSearch) return [];
+
+  try {
+    const webSearchRes = await performWebSearch({ context, toSearch });
+    const query = JSON.stringify(webSearchRes);
+    return [{ role: 'system', content: `\n\n${query}\n\n Here is some information about \n\n${toSearch}\n\n.` }];
+  } catch (e) {
+    return [];
+  }
+};
+
 const processChat = async ({ context, res }) => {
   // 1️⃣ Prepare UUID, file paths, and load history
   const uuid = context.chat.uuid || uuidv4();
@@ -95,10 +162,11 @@ const processChat = async ({ context, res }) => {
   messages.push({ role: 'user', content: context.chat.prompt });
 
   // 2️⃣ Build the payload
+  const searchResults = await withWebSearchRoles({ context, messages });
   const model = context.chat.model || context.model;
   const payload = {
     model: context.chat.model,
-    messages: withSystemRoles({ context, messages }),
+    messages: withSystemRoles({ context, messages, searchResults }),
     stream: context.chat.stream,
     think: context.chat.think,
   };

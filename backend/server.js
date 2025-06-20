@@ -1,6 +1,7 @@
 const express = require('express');
 const config = require('./config.json');
 const ollama = require('./middleware/ollama');
+const searxng = require('./middleware/searxng');
 const path = require('path');
 const cors = require('cors');
 
@@ -16,6 +17,7 @@ app.use((req, res, next) => {
 });
 
 app.use(ollama);
+app.use(searxng);
 
 require('./routes')(app);
 
