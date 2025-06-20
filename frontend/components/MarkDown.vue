@@ -38,11 +38,17 @@ const enhanceCodeBlocks = () => {
       cursor: pointer;
       font-size: 14px;
     `;
+    button.setAttribute('title', 'Copy to clipboard');
 
     button.onclick = () => {
       navigator.clipboard.writeText(block.textContent.trim());
-      button.innerHTML = SVG.CHECK;
-      setTimeout(() => (button.innerHTML = SVG.COPY), 500);
+      const svg = button.querySelector('svg');
+
+      if (svg) {
+        const fillColor = svg.getAttribute('fill');
+        svg.setAttribute('fill', '#4CAF50');
+        setTimeout(() => svg.setAttribute('fill', fillColor), 500);
+      }
     };
 
     const wrapper = document.createElement('div');
