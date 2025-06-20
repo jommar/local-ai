@@ -91,17 +91,16 @@ const _processChatStream = async ({ context, res, payload, uuid }) => {
 const _generateWebSearch = async ({ context, prevMessages }) => {
   if (!ALLOW_WEB_SEARCH) return null;
   try {
-    const { prompt } = context.chat;
     const messages = [
       {
         role: 'system',
         content:
-          'If you have sufficient data and can answer confidently, reply wil string NULL, if you need more data, reply with a string that the user can search the web with so it can be provided to you.',
+          'Basedon the given information, you will need to search the web for more information. You will reply with a JSON string for the most accurate answer for the user to search for.\n\nExample: {"webSearch": "What does the user want to search for"}',
       },
       {
         role: 'system',
         content:
-          'Your answer will strictly be in json format \n\n{"webSearch": "{searchQuery}"}\n\n or \n\n{"webSearch": "NULL"}\n\n other answers will not be accepted',
+          'Your answer will strictly be in json format \n\n{"webSearch": "{searchQuery}"}\n\n other answers will not be accepted',
       },
       ...prevMessages,
     ];
@@ -131,11 +130,14 @@ const performWebSearch = async ({ context, toSearch }) => {
   });
 
   const results = data.results.slice(0, SEARXNG_MAX_RESULTS);
-  return results.map(r => ({
+  const formattedResults = results.map(r => ({
     title: r.title,
     url: r.url,
     content: r.content,
   }));
+  // TODO: use cheerio to get the full page text in formattedResults.url
+
+  return formattedResults;
 };
 
 const withWebSearchRoles = async ({ context, messages }) => {
