@@ -1,17 +1,67 @@
 <template>
-  <div v-if="content.length > 0" class="markdown-body" v-html="renderMarkdown(content)"></div>
+  <div v-if="content.length > 0" class="markdown-body" v-html="renderedHtml" ref="markdownContainer"></div>
 </template>
 
 <script setup>
 import { marked } from 'marked';
-// eslint-disable-next-line no-unused-vars
+import { watch } from 'vue';
+
 const props = defineProps({
   content: String,
 });
 
+const renderedHtml = ref('');
+const markdownContainer = ref(null);
+
 const renderMarkdown = markdownText => {
   return marked(markdownText?.trim() || '');
 };
+
+// Copy-to-clipboard logic
+const enhanceCodeBlocks = () => {
+  const blocks = markdownContainer.value?.querySelectorAll('pre');
+  if (!blocks) return;
+
+  blocks.forEach(block => {
+    // Avoid inserting multiple buttons if re-rendered
+    if (block.querySelector('.copy-btn')) return;
+
+    const button = document.createElement('button');
+    button.innerHTML = SVG.COPY;
+    button.className = 'copy-btn';
+    button.style.cssText = `
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    `;
+
+    button.onclick = () => {
+      navigator.clipboard.writeText(block.textContent.trim());
+      button.innerHTML = SVG.CHECK;
+      setTimeout(() => (button.innerHTML = SVG.COPY), 500);
+    };
+
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'relative';
+    block.parentNode.insertBefore(wrapper, block);
+    wrapper.appendChild(button);
+    wrapper.appendChild(block);
+  });
+};
+
+// Watch for content change and enhance after DOM update
+watch(
+  () => props.content,
+  newVal => {
+    renderedHtml.value = renderMarkdown(newVal);
+    nextTick(() => enhanceCodeBlocks());
+  },
+  { immediate: true }
+);
 </script>
 
 <style>
