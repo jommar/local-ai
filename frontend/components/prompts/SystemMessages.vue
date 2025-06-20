@@ -1,8 +1,25 @@
 <template>
   <v-container>
     <v-textarea v-model="systemMessage" label="System Messages" rows="3"></v-textarea>
-    <div class="d-flex justify-end">
-      <v-btn color="primary" @click="onSaveSysMessages" icon="mdi-content-save" size="x-small"></v-btn>
+    <div class="d-flex justify-end align-center">
+      <v-btn color="primary" variant="text" @click="onSaveSysMessages" icon="mdi-content-save" size="x-small"></v-btn>
+    </div>
+
+    <div class="mt-4">
+      <v-btn block variant="text" size="x-small" @click="showInstructions">
+        <v-icon start>mdi-information</v-icon>
+        System Instructions
+      </v-btn>
+      <v-btn
+        :class="isThinking ? 'text-green' : 'text-red'"
+        block
+        variant="text"
+        size="x-small"
+        @click="toggleThinking"
+      >
+        <v-icon start> mdi-brain</v-icon>
+        Thinking
+      </v-btn>
     </div>
 
     <v-list density="compact">
@@ -35,11 +52,13 @@
 <script setup>
 const systemMessage = ref('');
 const sysMessagesList = ref([]);
+const isThinking = ref(false);
 
 const onSaveSysMessages = () => {
+  if (!systemMessage.value) return;
   loasSysMessages();
 
-  sysMessagesList.value.push(systemMessage.value);
+  sysMessagesList.value.push(systemMessage.value?.trim());
   localStorage.setItem(LOCALSTORAGE_KEYS.SYS_MESSAGES, JSON.stringify(sysMessagesList.value));
 
   loasSysMessages();
@@ -59,7 +78,25 @@ const deleteSysMessages = index => {
   loasSysMessages();
 };
 
+const showInstructions = async () => {
+  const module = await import('@/components/chat/CustomizeChat.vue');
+
+  bus.emit('dialog:open', {
+    component: markRaw(module.default),
+  });
+};
+
+const toggleThinking = () => {
+  isThinking.value = !isThinking.value;
+  localStorage.setItem(LOCALSTORAGE_KEYS.THINK, isThinking.value);
+};
+
+const loadThinking = () => {
+  isThinking.value = localStorage.getItem(LOCALSTORAGE_KEYS.THINK) === 'true';
+};
+
 onMounted(() => {
   loasSysMessages();
+  loadThinking();
 });
 </script>

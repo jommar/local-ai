@@ -65,9 +65,6 @@
           <template #append-inner>
             <v-btn color="primary" variant="text" icon="mdi-send" @click="send" />
           </template>
-          <template #prepend>
-            <ChatTools />
-          </template>
         </v-textarea>
       </v-container>
     </div>
