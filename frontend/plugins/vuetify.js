@@ -11,12 +11,15 @@ export default defineNuxtPlugin(app => {
     defaults: {
       VTextField: {
         variant: 'outlined',
+        clearable: true,
       },
       VTextarea: {
         variant: 'outlined',
+        clearable: true,
       },
       VSelect: {
         variant: 'outlined',
+        clearable: true,
       },
     },
   });
