@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const config = require('../config.json');
+const { websearchProompts, withSearchResult } = require('../prompts/websearch.prompt');
 
 const ALLOW_WEB_SEARCH = true;
 const SEARXNG_MAX_RESULTS = 5;
@@ -91,19 +92,7 @@ const _processChatStream = async ({ context, res, payload, uuid }) => {
 const _generateWebSearch = async ({ context, prevMessages }) => {
   if (!ALLOW_WEB_SEARCH) return null;
   try {
-    const messages = [
-      {
-        role: 'system',
-        content:
-          'Basedon the given information, you will need to search the web for more information. You will reply with a JSON string for the most accurate answer for the user to search for.\n\nExample: {"webSearch": "What does the user want to search for"}',
-      },
-      {
-        role: 'system',
-        content:
-          'Your answer will strictly be in json format \n\n{"webSearch": "{searchQuery}"}\n\n other answers will not be accepted',
-      },
-      ...prevMessages,
-    ];
+    const messages = [...websearchProompts, ...prevMessages];
     const res = await context.ollama.post('/chat', {
       model: context.chat.model,
       messages,
@@ -147,7 +136,10 @@ const withWebSearchRoles = async ({ context, messages }) => {
   try {
     const webSearchRes = await performWebSearch({ context, toSearch });
     const query = JSON.stringify(webSearchRes);
-    return [{ role: 'system', content: `\n\n${query}\n\n Here is some information about \n\n${toSearch}\n\n.` }];
+    return withSearchResult.map(m => ({
+      ...m,
+      content: m.content.replace('{query}', query).replace('{toSearch}', toSearch),
+    }));
   } catch (e) {
     return [];
   }
