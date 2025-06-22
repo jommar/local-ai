@@ -7,7 +7,7 @@ const getHeaderData = () => {
   };
 };
 
-const _postStream = async (url, data, onMessage) => {
+const _postStream = async (url, data, onMessage, controller = new AbortController()) => {
   const BASE_URL = useRuntimeConfig().public.apiBaseUrl;
 
   const res = await fetch(`${BASE_URL}${url}`, {
@@ -17,6 +17,7 @@ const _postStream = async (url, data, onMessage) => {
       ...getHeaderData(),
     },
     body: JSON.stringify(data),
+    signal: controller.signal,
   });
 
   if (!res.ok || !res.body) {
