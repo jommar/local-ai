@@ -18,7 +18,6 @@ Strict rules:
 - Do NOT use quotes, backticks, or extra formatting outside the JSON object.
 - ONLY return a JSON object like: { "webSearch": "..." }
 
-The search terms may include operators like site:, intitle:, etc. if helpful.
 Other formats will be rejected.`,
   },
 ];

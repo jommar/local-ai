@@ -31,13 +31,7 @@
             :content="message.content"
             v-if="message.role === 'assistant' && message.content?.trim()"
           >
-            <div v-if="message?.config?.searchedTheWeb" class="position-absolute right-0 top-0 pa-2">
-              <v-tooltip text="Web search used" location="top">
-                <template #activator="{ props }">
-                  <v-icon v-bind="props" color="blue" size="sm">mdi-web</v-icon>
-                </template>
-              </v-tooltip>
-            </div>
+            <ChatWebSearch class="mb-4" v-if="message?.config?.searchedTheWeb" :config="message.config" />
           </MarkDown>
           <div
             v-if="message.role === 'user'"
@@ -121,6 +115,9 @@ const send = async () => {
   let chatConfig = null;
 
   addMessage({ role: 'user', content: message.value });
+
+  autoScroll.value = true;
+  scrollToBottom();
 
   const prompt = message.value;
   message.value = '';

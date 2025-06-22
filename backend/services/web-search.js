@@ -1,21 +1,49 @@
 const FETCH_TIMEOUT_MS = 5000;
 const SEARXNG_MAX_RESULTS = 5;
 const DEFAULT_IGNORE_SELECTORS = [
+  // Structural or metadata
   'script',
   'style',
+  'noscript',
+  'template',
+  'meta',
+  'link',
+  'iframe',
+  'svg',
+  'canvas',
+  'object',
+  'embed',
+
+  // Layout/navigation/UI elements
   'nav',
   'footer',
   'header',
-  'noscript',
-  'iframe',
-  'svg',
-  '.sidebar',
+  'form',
+  'aside',
+
+  // Common classes/IDs for ads and UI overlays
   '.ad',
   '.ads',
+  '[class*="advert"]',
+  '[id*="advert"]',
+  '.sponsored',
   '.popup',
+  '.modal',
+  '.overlay',
   '.newsletter',
-  '#cookie-banner',
+  '.subscribe',
   '.subscribe-box',
+  '.subscription',
+  '#cookie-banner',
+  '.cookie-consent',
+  '.sidebar',
+  '.share-buttons',
+  '.social-icons',
+
+  // Hidden elements
+  '[aria-hidden="true"]',
+  '[style*="display:none"]',
+  '[style*="visibility:hidden"]',
 ];
 
 const fetchHtml = async ({ context, url }) => {

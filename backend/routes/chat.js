@@ -14,6 +14,7 @@ router.post('/', async (req, res) => {
     think: req.headers.think === 'true',
     stream: req.headers.stream === 'true',
     systemMessages: JSON.parse(req.headers.systemmessages),
+    enableWebSearch: req.headers.enableWebSearch,
   };
 
   if (!prompt) {
