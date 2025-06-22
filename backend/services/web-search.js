@@ -1,0 +1,79 @@
+const FETCH_TIMEOUT_MS = 5000;
+const SEARXNG_MAX_RESULTS = 5;
+const DEFAULT_IGNORE_SELECTORS = [
+  'script',
+  'style',
+  'nav',
+  'footer',
+  'header',
+  'noscript',
+  'iframe',
+  'svg',
+  '.sidebar',
+  '.ad',
+  '.ads',
+  '.popup',
+  '.newsletter',
+  '#cookie-banner',
+  '.subscribe-box',
+];
+
+const fetchHtml = async ({ context, url }) => {
+  const { data } = await context.axios.get(url, { timeout: FETCH_TIMEOUT_MS });
+  return data;
+};
+
+const cleanDom = ({ $, ignoreSelectors }) => {
+  ignoreSelectors.forEach(selector => $(selector).remove());
+};
+
+const extractCleanText = ({ $ }) => {
+  const rawText = $('body').text();
+  const cleaned = rawText.replace(/\s+/g, ' ').trim();
+  return cleaned.length > 0 ? cleaned : null;
+};
+
+export const scrapeVisibleText = async ({ url, context, ignoreSelectors = DEFAULT_IGNORE_SELECTORS }) => {
+  try {
+    const html = await fetchHtml({ url, context });
+    const $ = context.cheerio.load(html);
+    cleanDom({ $, ignoreSelectors });
+    const text = extractCleanText({ $ });
+
+    return text;
+  } catch (error) {
+    console.error(`❌ Scraping failed: ${url}`, error.message);
+    return null;
+  }
+};
+
+export const performWebSearch = async ({ context, toSearch }) => {
+  const { data } = await context.searxng.get('/search', {
+    params: {
+      q: toSearch,
+      format: 'json',
+    },
+  });
+
+  const results = data.results.slice(0, SEARXNG_MAX_RESULTS);
+
+  const formattedResults = await Promise.all(
+    results.map(async r => {
+      try {
+        const content = await scrapeVisibleText({ url: r.url, context });
+        if (!content) return null;
+
+        return {
+          title: r.title,
+          url: r.url,
+          content,
+        };
+      } catch (err) {
+        console.error(`❌ Failed to scrape ${r.url}:`, err.message);
+        return null;
+      }
+    })
+  );
+
+  return formattedResults.filter(Boolean);
+};

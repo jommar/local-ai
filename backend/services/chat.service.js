@@ -2,10 +2,13 @@ const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const config = require('../config.json');
-const { websearchProompts, withSearchResult } = require('../prompts/websearch.prompt');
+const { websearchPrompts, withSearchResult } = require('../prompts/websearch.prompt');
+const { chatPrompts } = require('../prompts/chat.prompt');
+const { performWebSearch } = require('./web-search');
 
-const ALLOW_WEB_SEARCH = true;
-const SEARXNG_MAX_RESULTS = 5;
+const _cleanupChat = chat => {
+  return chat.map(c => ({ role: c.role, content: c.content }));
+};
 
 const getMessageHistory = filePath => {
   if (!fs.existsSync(filePath)) {
@@ -40,10 +43,11 @@ const withSystemRoles = ({ messages, context, searchResults = [] }) => {
     });
   }
 
-  return withSystemRoles;
+  return [...withSystemRoles, ...chatPrompts];
 };
 
-const _processChatStream = async ({ context, res, payload, uuid }) => {
+const _processChatStream = async ({ context, res, payload, uuid, didSearch }) => {
+  const config = { searchedTheWeb: didSearch };
   // Set SSE headers
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -70,7 +74,7 @@ const _processChatStream = async ({ context, res, payload, uuid }) => {
         const parsed = JSON.parse(line);
         const content = parsed.message?.content || '';
         assistantText += content;
-        res.write(`data: ${JSON.stringify({ delta: content, uuid })}\n\n`);
+        res.write(`data: ${JSON.stringify({ delta: content, uuid, config })}\n\n`);
       } catch (err) {
         console.error('Invalid JSON from Ollama:', line);
       }
@@ -84,15 +88,14 @@ const _processChatStream = async ({ context, res, payload, uuid }) => {
   });
 
   // Save response history and close connection
-  messages.push({ role: 'assistant', content: assistantText });
+  messages.push({ role: 'assistant', content: assistantText, config });
   saveMessageHistory(filePath, messages);
   res.end();
 };
 
 const _generateWebSearch = async ({ context, prevMessages }) => {
-  if (!ALLOW_WEB_SEARCH) return null;
   try {
-    const messages = [...websearchProompts, ...prevMessages];
+    const messages = [...websearchPrompts, ...prevMessages];
     const res = await context.ollama.post('/chat', {
       model: context.chat.model,
       messages,
@@ -108,25 +111,6 @@ const _generateWebSearch = async ({ context, prevMessages }) => {
   } catch (e) {
     return null;
   }
-};
-
-const performWebSearch = async ({ context, toSearch }) => {
-  const { data } = await context.searxng.get('/search', {
-    params: {
-      q: toSearch,
-      format: 'json',
-    },
-  });
-
-  const results = data.results.slice(0, SEARXNG_MAX_RESULTS);
-  const formattedResults = results.map(r => ({
-    title: r.title,
-    url: r.url,
-    content: r.content,
-  }));
-  // TODO: use cheerio to get the full page text in formattedResults.url
-
-  return formattedResults;
 };
 
 const withWebSearchRoles = async ({ context, messages }) => {
@@ -160,13 +144,21 @@ const processChat = async ({ context, res }) => {
   const model = context.chat.model || context.model;
   const payload = {
     model: context.chat.model,
-    messages: withSystemRoles({ context, messages, searchResults }),
+    messages: _cleanupChat(withSystemRoles({ context, messages, searchResults })),
     stream: context.chat.stream,
     think: context.chat.think,
   };
 
   // 3️⃣ STREAMING branch
-  if (payload.stream) return await _processChatStream({ context, res, payload, uuid });
+  if (payload.stream) {
+    return await _processChatStream({
+      context,
+      res,
+      payload,
+      uuid,
+      didSearch: searchResults.length > 0,
+    });
+  }
 
   // 5️⃣ NON-STREAMING branch
   const apiRes = await context.ollama.post('/chat', payload);

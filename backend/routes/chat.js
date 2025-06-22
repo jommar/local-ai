@@ -24,7 +24,6 @@ router.post('/', async (req, res) => {
     await processChat({ context: req.context, res });
   } catch (e) {
     console.error(e.message);
-    res.status(500).send({ error: 'Failed to process chat.' });
   }
 });
 

@@ -30,7 +30,15 @@
             style="max-width: 75%"
             :content="message.content"
             v-if="message.role === 'assistant' && message.content?.trim()"
-          ></MarkDown>
+          >
+            <div v-if="message?.config?.searchedTheWeb" class="position-absolute right-0 top-0 pa-2">
+              <v-tooltip text="Web search used" location="top">
+                <template #activator="{ props }">
+                  <v-icon v-bind="props" color="blue" size="sm">mdi-web</v-icon>
+                </template>
+              </v-tooltip>
+            </div>
+          </MarkDown>
           <div
             v-if="message.role === 'user'"
             class="mb-2 rounded-lg py-2 px-4"
@@ -110,6 +118,7 @@ const addMessage = message => {
 const send = async () => {
   const uuid = useRoute().query.uuid;
   const reloadChats = !messages.value.length;
+  let chatConfig = null;
 
   addMessage({ role: 'user', content: message.value });
 
@@ -121,14 +130,16 @@ const send = async () => {
   addMessage({ role: 'assistant', content: '' });
 
   await api.postStream('/chat', { prompt, uuid, stream: true }, r => {
-    const { delta, uuid } = r;
+    const { delta, uuid, config } = r;
 
     isFetching.value = false;
     isThinking.value = delta === '';
 
+    if (chatConfig === null) chatConfig = config;
+
     useRouter().replace({ query: { uuid } });
     assistantText += delta;
-    updateLastAssistantMessage(assistantText);
+    updateLastAssistantMessage({ content: assistantText, config: chatConfig });
   });
 
   isFetching.value = false;
@@ -137,9 +148,12 @@ const send = async () => {
   if (reloadChats) bus.emit('chat:reload');
 };
 
-const updateLastAssistantMessage = content => {
+const updateLastAssistantMessage = ({ content, config }) => {
   const last = messages.value.findLast(m => m.role === 'assistant');
-  if (last) last.content = content;
+  if (last) {
+    last.content = content;
+    last.config = config;
+  }
   scrollToBottom();
 };
 
