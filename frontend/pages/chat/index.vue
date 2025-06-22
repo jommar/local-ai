@@ -65,7 +65,8 @@
           max-rows="8"
         >
           <template #append-inner>
-            <v-btn color="primary" variant="text" icon="mdi-send" @click="send" />
+            <v-btn v-if="!isAnswering" color="primary" variant="text" icon="mdi-send" @click="send" />
+            <v-btn v-else color="red" variant="text" icon="mdi-cancel" @click="stopStream" />
           </template>
         </v-textarea>
       </v-container>
@@ -82,6 +83,9 @@ const scrollAnchor = ref(null);
 const isFetching = ref(false);
 const isThinking = ref(false);
 const autoScroll = ref(true);
+const isAnswering = ref(false);
+
+let controller = new AbortController();
 
 const messageClasses = computed(() => {
   return {
@@ -114,6 +118,8 @@ const send = async () => {
   const reloadChats = !messages.value.length;
   let chatConfig = null;
 
+  isAnswering.value = true;
+
   addMessage({ role: 'user', content: message.value });
 
   autoScroll.value = true;
@@ -126,21 +132,27 @@ const send = async () => {
   let assistantText = '';
   addMessage({ role: 'assistant', content: '' });
 
-  await api.postStream('/chat', { prompt, uuid, stream: true }, r => {
-    const { delta, uuid, config } = r;
+  await api.postStream(
+    '/chat',
+    { prompt, uuid, stream: true },
+    r => {
+      const { delta, uuid, config } = r;
 
-    isFetching.value = false;
-    isThinking.value = delta === '';
+      isFetching.value = false;
+      isThinking.value = delta === '';
 
-    if (chatConfig === null) chatConfig = config;
+      if (chatConfig === null) chatConfig = config;
 
-    useRouter().replace({ query: { uuid } });
-    assistantText += delta;
-    updateLastAssistantMessage({ content: assistantText, config: chatConfig });
-  });
+      useRouter().replace({ query: { uuid } });
+      assistantText += delta;
+      updateLastAssistantMessage({ content: assistantText, config: chatConfig });
+    },
+    controller
+  );
 
   isFetching.value = false;
   isThinking.value = false;
+  isAnswering.value = false;
 
   if (reloadChats) bus.emit('chat:reload');
 };
@@ -159,6 +171,14 @@ const handleKeydown = e => {
     e.preventDefault();
     send();
   }
+};
+
+const stopStream = () => {
+  controller?.abort();
+  controller = new AbortController();
+  isAnswering.value = false;
+  isFetching.value = false;
+  isThinking.value = false;
 };
 
 onMounted(async () => {

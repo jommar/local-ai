@@ -51,7 +51,9 @@ const withSystemRoles = ({ messages, context, searchResults = [] }) => {
 };
 
 const _processChatStream = async ({ context, res, payload, uuid, searchQuery, sources }) => {
+  let aborted = false;
   const config = { searchedTheWeb: !!searchQuery, searchQuery, sources };
+
   // Set SSE headers
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -66,6 +68,12 @@ const _processChatStream = async ({ context, res, payload, uuid, searchQuery, so
   // Send streaming request
   const apiRes = await context.ollama.post('/chat', payload, {
     responseType: 'stream',
+  });
+
+  res.socket?.on('close', () => {
+    aborted = true;
+    console.log('🔌 Client disconnected (socket close)');
+    apiRes.data.destroy(); // Stop upstream stream
   });
 
   let assistantText = '';
@@ -85,16 +93,18 @@ const _processChatStream = async ({ context, res, payload, uuid, searchQuery, so
     }
   });
 
-  // Wait for stream to end
-  await new Promise((resolve, reject) => {
-    apiRes.data.on('end', resolve);
-    apiRes.data.on('error', reject);
+  apiRes.data.on('end', () => {
+    if (!aborted) {
+      messages.push({ role: 'assistant', content: assistantText, config });
+      saveMessageHistory(filePath, messages);
+      res.end(); // ✅ End SSE
+    }
   });
 
-  // Save response history and close connection
-  messages.push({ role: 'assistant', content: assistantText, config });
-  saveMessageHistory(filePath, messages);
-  res.end();
+  apiRes.data.on('error', err => {
+    console.error('Ollama stream error:', err);
+    if (!aborted) res.end();
+  });
 };
 
 const _generateWebSearch = async ({ context, prevMessages }) => {
@@ -126,7 +136,6 @@ const withWebSearchRoles = async ({ context, messages }) => {
   try {
     const webSearchRes = await performWebSearch({ context, toSearch });
     const query = JSON.stringify(webSearchRes);
-    console.log(JSON.stringify(webSearchRes));
     return {
       searchQuery: toSearch,
       sources: webSearchRes.map(m => m.url),
