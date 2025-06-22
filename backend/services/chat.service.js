@@ -6,6 +6,10 @@ const { websearchPrompts, withSearchResult } = require('../prompts/websearch.pro
 const { chatPrompts } = require('../prompts/chat.prompt');
 const { performWebSearch } = require('./web-search');
 
+const _canSearchInternet = ({ context }) => {
+  return config?.enableWebSearch || context?.chat?.enableWebSearch;
+};
+
 const _cleanupChat = chat => {
   return chat.map(c => ({ role: c.role, content: c.content }));
 };
@@ -46,8 +50,8 @@ const withSystemRoles = ({ messages, context, searchResults = [] }) => {
   return [...withSystemRoles, ...chatPrompts];
 };
 
-const _processChatStream = async ({ context, res, payload, uuid, didSearch }) => {
-  const config = { searchedTheWeb: didSearch };
+const _processChatStream = async ({ context, res, payload, uuid, searchQuery, sources }) => {
+  const config = { searchedTheWeb: !!searchQuery, searchQuery, sources };
   // Set SSE headers
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -114,18 +118,26 @@ const _generateWebSearch = async ({ context, prevMessages }) => {
 };
 
 const withWebSearchRoles = async ({ context, messages }) => {
+  if (!_canSearchInternet({ context })) return [];
+
   const toSearch = await _generateWebSearch({ context, prevMessages: messages });
   if (!toSearch) return [];
 
   try {
     const webSearchRes = await performWebSearch({ context, toSearch });
     const query = JSON.stringify(webSearchRes);
-    return withSearchResult.map(m => ({
-      ...m,
-      content: m.content.replace('{query}', query).replace('{toSearch}', toSearch),
-    }));
+    console.log(JSON.stringify(webSearchRes));
+    return {
+      searchQuery: toSearch,
+      sources: webSearchRes.map(m => m.url),
+      results: withSearchResult.map(m => ({
+        ...m,
+        content: m.content.replace('{query}', query).replace('{toSearch}', toSearch),
+      })),
+    };
   } catch (e) {
-    return [];
+    console.error('❌ Failed to perform web search:', e.message);
+    return { searchQuery: false, results: [] };
   }
 };
 
@@ -140,7 +152,8 @@ const processChat = async ({ context, res }) => {
   messages.push({ role: 'user', content: context.chat.prompt });
 
   // 2️⃣ Build the payload
-  const searchResults = await withWebSearchRoles({ context, messages });
+  const searchRes = await withWebSearchRoles({ context, messages });
+  const searchResults = searchRes.results || [];
   const model = context.chat.model || context.model;
   const payload = {
     model: context.chat.model,
@@ -156,7 +169,8 @@ const processChat = async ({ context, res }) => {
       res,
       payload,
       uuid,
-      didSearch: searchResults.length > 0,
+      searchQuery: searchRes?.searchQuery,
+      sources: searchRes?.sources,
     });
   }
 

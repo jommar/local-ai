@@ -1,6 +1,7 @@
 {
   "port": 3123,
   "host": "http://localhost",
+  "enableWebSearch": true,
   "ollama": {
     "host": "http://localhost",
     "port": "11434",
