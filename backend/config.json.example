@@ -163,6 +163,10 @@
       }
     ]
   },
+  "searxng": {
+    "host": "http://localhost",
+    "port": "3087"
+  },
   "prompts": {
     "system": "You're an AI assistant that will provide useful and accurate answers, you will double check your response before giving it."
   }

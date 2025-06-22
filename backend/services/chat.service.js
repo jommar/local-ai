@@ -2,6 +2,13 @@ const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const config = require('../config.json');
+const { websearchPrompts, withSearchResult } = require('../prompts/websearch.prompt');
+const { chatPrompts } = require('../prompts/chat.prompt');
+const { performWebSearch } = require('./web-search');
+
+const _cleanupChat = chat => {
+  return chat.map(c => ({ role: c.role, content: c.content }));
+};
 
 const getMessageHistory = filePath => {
   if (!fs.existsSync(filePath)) {
@@ -16,12 +23,13 @@ const saveMessageHistory = (filePath, messages) => {
   fs.writeFileSync(filePath, JSON.stringify(messages, null, 2), 'utf-8');
 };
 
-const withSystemRoles = ({ messages, context }) => {
+const withSystemRoles = ({ messages, context, searchResults = [] }) => {
   const systemMessages = context.chat.systemMessages
     .filter(m => m.enabled)
     .map(content => ({ role: 'system', content: content.message }));
   const withSystemRoles = [...messages];
 
+  if (searchResults?.length) withSystemRoles.unshift(...searchResults);
   if (systemMessages?.length) withSystemRoles.unshift(...systemMessages);
   if (config?.prompts?.system) withSystemRoles.unshift({ role: 'system', content: config?.prompts?.system });
 
@@ -35,10 +43,11 @@ const withSystemRoles = ({ messages, context }) => {
     });
   }
 
-  return withSystemRoles;
+  return [...withSystemRoles, ...chatPrompts];
 };
 
-const _processChatStream = async ({ context, res, payload, uuid }) => {
+const _processChatStream = async ({ context, res, payload, uuid, didSearch }) => {
+  const config = { searchedTheWeb: didSearch };
   // Set SSE headers
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -65,7 +74,7 @@ const _processChatStream = async ({ context, res, payload, uuid }) => {
         const parsed = JSON.parse(line);
         const content = parsed.message?.content || '';
         assistantText += content;
-        res.write(`data: ${JSON.stringify({ delta: content, uuid })}\n\n`);
+        res.write(`data: ${JSON.stringify({ delta: content, uuid, config })}\n\n`);
       } catch (err) {
         console.error('Invalid JSON from Ollama:', line);
       }
@@ -79,9 +88,45 @@ const _processChatStream = async ({ context, res, payload, uuid }) => {
   });
 
   // Save response history and close connection
-  messages.push({ role: 'assistant', content: assistantText });
+  messages.push({ role: 'assistant', content: assistantText, config });
   saveMessageHistory(filePath, messages);
   res.end();
+};
+
+const _generateWebSearch = async ({ context, prevMessages }) => {
+  try {
+    const messages = [...websearchPrompts, ...prevMessages];
+    const res = await context.ollama.post('/chat', {
+      model: context.chat.model,
+      messages,
+      think: false,
+      stream: false,
+    });
+    const { content } = res?.data?.message;
+    const { webSearch } = JSON.parse(content);
+
+    if (webSearch === 'NULL') return null;
+
+    return webSearch;
+  } catch (e) {
+    return null;
+  }
+};
+
+const withWebSearchRoles = async ({ context, messages }) => {
+  const toSearch = await _generateWebSearch({ context, prevMessages: messages });
+  if (!toSearch) return [];
+
+  try {
+    const webSearchRes = await performWebSearch({ context, toSearch });
+    const query = JSON.stringify(webSearchRes);
+    return withSearchResult.map(m => ({
+      ...m,
+      content: m.content.replace('{query}', query).replace('{toSearch}', toSearch),
+    }));
+  } catch (e) {
+    return [];
+  }
 };
 
 const processChat = async ({ context, res }) => {
@@ -95,16 +140,25 @@ const processChat = async ({ context, res }) => {
   messages.push({ role: 'user', content: context.chat.prompt });
 
   // 2️⃣ Build the payload
+  const searchResults = await withWebSearchRoles({ context, messages });
   const model = context.chat.model || context.model;
   const payload = {
     model: context.chat.model,
-    messages: withSystemRoles({ context, messages }),
+    messages: _cleanupChat(withSystemRoles({ context, messages, searchResults })),
     stream: context.chat.stream,
     think: context.chat.think,
   };
 
   // 3️⃣ STREAMING branch
-  if (payload.stream) return await _processChatStream({ context, res, payload, uuid });
+  if (payload.stream) {
+    return await _processChatStream({
+      context,
+      res,
+      payload,
+      uuid,
+      didSearch: searchResults.length > 0,
+    });
+  }
 
   // 5️⃣ NON-STREAMING branch
   const apiRes = await context.ollama.post('/chat', payload);

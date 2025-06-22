@@ -1,6 +1,6 @@
-# Local AI
+# 🧠 Local AI
 
-A simple application that uses [Ollama](https://ollama.com/) to run the `llama3:latest` model locally.
+This app is a local AI-powered tool that integrates web search, chat interfaces, and LLM inference — all running locally using Docker.
 
 <div>
   <img src="./assets/welcome.png" alt="Welcome" width="400" />
@@ -8,71 +8,93 @@ A simple application that uses [Ollama](https://ollama.com/) to run the `llama3:
   <img src="./assets/history.png" alt="Welcome" width="400" />
 </div>
 
-## 📦 Prerequisites
+---
 
-Before running the app, make sure you have the following installed on your machine:
+## 📦 Requirements
 
-- [Ollama](https://ollama.com/download)
+Before you begin, make sure you have the following installed:
 
-## 🧠 Model Setup
+- [Node.js](https://nodejs.org/) (v22 or later recommended)
+- [Docker](https://www.docker.com/)
+- [Docker Compose](https://docs.docker.com/compose/)
 
-After installing Ollama, download the `llama3.2` model by running:
+---
 
-```bash
-ollama pull llama3.2
-```
+## 🗂 Project Structure
 
-## 🚀 Running the App
-
-To start both frontend and backend servers:
-
-```bash
-npm run start
-```
-
-This command runs both the frontend and backend concurrently.
-
-## ⚙️ Backend Configuration
-
-Create a config file at:
+The project is organized into three main parts:
 
 ```
-backend/config.json
+/frontend   - Nuxt 3 app (UI)
+/backend    - Express server (API)
+/docker     - Contains all required containers and configurations
 ```
 
-Use the following example as a guide:
+---
 
-```json
-{
-  "port": 3123,
-  "host": "http://localhost",
-  "ollama": {
-    "host": "http://localhost",
-    "port": "11434"
-  }
-}
-```
+## 🚀 Getting Started
 
-> 📝 Tip: You can rename `config.json.example` to `config.json`.
+1. **Clone the repository:**
 
-## 🌐 Frontend Configuration
+   ```bash
+   git clone https://github.com/jommar/local-ai.git
+   cd local-ai
+   ```
 
-Create a `.env` file inside the `frontend` directory:
+2. **Start required containers:**
 
-> 📝 Tip: You can rename `.env.example` to `.env`.
+   Go to the `docker/` directory and run:
 
-```
-frontend/.env
-```
+   ```bash
+   docker-compose up -d
+   ```
 
-Example:
+   This will start the following containers:
 
-```env
-NUXT_PORT=3122
-```
+   | Container Name | Image                                | Port                     |
+   | -------------- | ------------------------------------ | ------------------------ |
+   | open-webui     | `ghcr.io/open-webui/open-webui:main` | `http://localhost:4086`  |
+   | searxng        | `searxng/searxng:latest`             | `http://localhost:3087`  |
+   | ollama         | `ollama/ollama:latest`               | `http://localhost:11434` |
 
-You can now use the app at `http://localhost:3122/chat`
+3. **Configure environment variables:**
 
-# Running Ollama and OpenWebUI with Docker
+   - Copy and customize the example config files:
 
-To run Ollama and OpenWebUI using Docker, follow the instructions provided in the README.md file located within the `./docker` directory. Be sure to carefully read and execute each step as outlined.
+     ```bash
+     cp backend/config.json.example backend/config.json
+     cp frontend/.env.example frontend/.env
+     ```
+
+   - Edit values as needed.
+
+4. **Update SearXNG settings:**
+
+   Open and edit `docker/searxng-settings/settings.yml` and ensure the following line is included to support JSON responses:
+
+   ```yaml
+   formats:
+     - html
+     - json
+   ```
+
+5. **Start the app:**
+
+   At the root of the project, run:
+
+   ```bash
+   npm run start
+   ```
+
+   This will start **both** frontend and backend concurrently.
+
+---
+
+## 💠 Development Tips
+
+- Make sure containers are up before running the app.
+- If you need to rebuild containers:
+  ```bash
+  docker-compose down
+  docker-compose up --build -d
+  ```

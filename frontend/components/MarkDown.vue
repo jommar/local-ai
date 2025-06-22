@@ -1,5 +1,8 @@
 <template>
-  <div v-if="content.length > 0" class="markdown-body" v-html="renderedHtml" ref="markdownContainer"></div>
+  <div v-if="content.length > 0" class="position-relative">
+    <slot></slot>
+    <div class="markdown-body" v-html="renderedHtml" ref="markdownContainer"></div>
+  </div>
 </template>
 
 <script setup>
