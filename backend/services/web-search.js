@@ -165,7 +165,9 @@ export const performWebSearch = async ({ context, toSearch }) => {
   return defaultRes;
 };
 
-export const willUseSearch = async ({ context }) => {
+export const willUseSearch = async ({ context, messages = [] }) => {
+  const userMessages =
+    messages.length > 0 ? getUserMessages(messages) : [{ role: 'user', content: context.chat.prompt }];
   const payload = {
     model: context.chat.model,
     messages: [
@@ -181,7 +183,11 @@ export const willUseSearch = async ({ context }) => {
         role: 'system',
         content: 'You shouuld always use the internet if the question is about latest news or current events',
       },
-      { role: 'user', content: context.chat.prompt },
+      {
+        role: 'system',
+        content: `Todays date is ${new Date().toISOString()}. Use this information to see if you have up to date information`,
+      },
+      ...userMessages,
     ],
     stream: false,
     think: false,
@@ -201,7 +207,13 @@ export const willUseSearch = async ({ context }) => {
   return willSearchInternet;
 };
 
-export const constructSearchTerm = async ({ context }) => {
+const getUserMessages = (messages, limit = 11) => {
+  return messages.slice(-limit);
+};
+
+export const constructSearchTerm = async ({ context, messages = [] }) => {
+  const userMessages =
+    messages.length > 0 ? getUserMessages(messages) : [{ role: 'user', content: context.chat.prompt }];
   const payload = {
     model: context.chat.model,
     messages: [
@@ -210,7 +222,11 @@ export const constructSearchTerm = async ({ context }) => {
         content:
           'Construct a meaningful search term that will be used in search engines like google based on the user prompt',
       },
-      { role: 'user', content: context.chat.prompt },
+      {
+        role: 'system',
+        content: `Todays date is ${new Date().toISOString()}. Use this information to see if you have up to date information`,
+      },
+      ...userMessages,
     ],
     stream: false,
     think: false,

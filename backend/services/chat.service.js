@@ -113,8 +113,8 @@ const processChat = async ({ context, res }) => {
 
   // 2️⃣ Build the payload
   let searchTerm = null;
-  const willSearchInternet = await willUseSearch({ context });
-  if (willSearchInternet) searchTerm = await constructSearchTerm({ context });
+  const willSearchInternet = await willUseSearch({ context, messages });
+  if (willSearchInternet) searchTerm = await constructSearchTerm({ context, messages });
 
   const searchResults = await performWebSearch({ context, toSearch: searchTerm });
   const hasSearchResults = !!searchResults?.results?.length;
