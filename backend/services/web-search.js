@@ -61,6 +61,28 @@ const extractCleanText = ({ $ }) => {
   return cleaned.length > 0 ? cleaned : null;
 };
 
+const summarizeScrapedText = async ({ context, text }) => {
+  try {
+    const res = await context.ollama.post('/chat', {
+      model: context.chat.model,
+      messages: [
+        {
+          role: 'user',
+          content: `Summarize this text: ${text}\n\nYou will only return the summarized version and no other context.`,
+        },
+      ],
+      think: false,
+      stream: false,
+    });
+    const { content } = res?.data?.message;
+
+    return content;
+  } catch (e) {
+    console.error(`❌ Summarization failed`, e.message);
+    return null;
+  }
+};
+
 export const scrapeVisibleText = async ({ url, context, ignoreSelectors = DEFAULT_IGNORE_SELECTORS }) => {
   try {
     const html = await fetchHtml({ url, context });
@@ -68,7 +90,11 @@ export const scrapeVisibleText = async ({ url, context, ignoreSelectors = DEFAUL
     cleanDom({ $, ignoreSelectors });
     const text = extractCleanText({ $ });
 
-    return text;
+    if (!text) return null;
+
+    const summarized = await summarizeScrapedText({ context, text });
+
+    return summarized;
   } catch (error) {
     console.error(`❌ Scraping failed: ${url}`, error.message);
     return null;

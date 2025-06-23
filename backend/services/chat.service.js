@@ -72,8 +72,7 @@ const _processChatStream = async ({ context, res, payload, uuid, searchQuery, so
 
   res.socket?.on('close', () => {
     aborted = true;
-    console.log('🔌 Client disconnected (socket close)');
-    apiRes.data.destroy(); // Stop upstream stream
+    apiRes.data.destroy();
   });
 
   let assistantText = '';
