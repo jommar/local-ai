@@ -17,6 +17,20 @@ Before you begin, make sure you have the following installed:
 - [Node.js](https://nodejs.org/) (v22 or later recommended)
 - [Docker](https://www.docker.com/)
 - [Docker Compose](https://docs.docker.com/compose/)
+- [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) (optional, for GPU acceleration with Ollama)
+
+## ⚡️ GPU Acceleration (Optional but Recommended)
+
+To enable GPU support for faster LLM inference with Ollama, install the NVIDIA Container Toolkit.
+
+After installation:
+
+- Ensure Docker is configured to use the `nvidia` runtime by updating your Docker daemon settings.
+- Then, verify GPU access using the following test command:
+
+  ```bash
+   docker run --rm --gpus all nvidia/cuda:12.2.0-base-ubuntu22.04 nvidia-smi
+  ```
 
 ---
 
