@@ -102,62 +102,68 @@ const _processChatStream = async ({ context, res, payload, uuid, searchQuery, so
 };
 
 const processChat = async ({ context, res }) => {
-  // 1️⃣ Prepare UUID, file paths, and load history
-  const uuid = context.chat.uuid || uuidv4();
-  const dirPath = path.resolve(context.root, './messages');
-  const filePath = path.resolve(dirPath, `${uuid}.log`);
-  if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
+  const isStreaming = context.chat.stream;
 
-  const messages = getMessageHistory(filePath);
-  messages.push({ role: 'user', content: context.chat.prompt });
+  try {
+    // 1️⃣ Prepare UUID, file paths, and load history
+    const uuid = context.chat.uuid || uuidv4();
+    const dirPath = path.resolve(context.root, './messages');
+    const filePath = path.resolve(dirPath, `${uuid}.log`);
+    if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
 
-  // 2️⃣ Build the payload
-  let searchTerm = null;
-  const willSearchInternet = await willUseSearch({ context, messages });
-  if (willSearchInternet) searchTerm = await constructSearchTerm({ context, messages });
+    const messages = getMessageHistory(filePath);
+    messages.push({ role: 'user', content: context.chat.prompt });
 
-  const searchResults = await performWebSearch({ context, toSearch: searchTerm });
-  const hasSearchResults = !!searchResults?.results?.length;
+    // 2️⃣ Build the payload
+    let searchTerm = null;
+    const willSearchInternet = await willUseSearch({ context, messages });
+    if (willSearchInternet) searchTerm = await constructSearchTerm({ context, messages });
 
-  const model = context.chat.model || context.model;
-  const finalMessages = _cleanupChat(
-    withSystemRoles({ context, messages, searchResults: hasSearchResults ? searchResults.messages : [] })
-  );
-  const payload = {
-    model: context.chat.model,
-    messages: finalMessages,
-    stream: context.chat.stream,
-    think: context.chat.think,
-    options: {
-      seed: 101,
-      temperature: 0.2,
-    },
-  };
+    const searchResults = await performWebSearch({ context, toSearch: searchTerm });
+    const hasSearchResults = !!searchResults?.results?.length;
 
-  // 3️⃣ STREAMING branch
-  if (payload.stream) {
-    return await _processChatStream({
-      context,
-      res,
-      payload,
-      uuid,
-      searchQuery: hasSearchResults ? searchResults?.searchQuery : undefined,
-      sources: hasSearchResults ? searchResults?.sources : undefined,
-    });
+    const model = context.chat.model || context.model;
+    const finalMessages = _cleanupChat(
+      withSystemRoles({ context, messages, searchResults: hasSearchResults ? searchResults.messages : [] })
+    );
+    const payload = {
+      model,
+      messages: finalMessages,
+      stream: context.chat.stream,
+      think: context.chat.think,
+      options: {
+        seed: 101,
+        temperature: 0.2,
+      },
+    };
+
+    // 3️⃣ STREAMING branch
+    if (isStreaming) {
+      return await _processChatStream({
+        context,
+        res,
+        payload,
+        uuid,
+        searchQuery: hasSearchResults ? searchResults?.searchQuery : undefined,
+        sources: hasSearchResults ? searchResults?.sources : undefined,
+      });
+    }
+
+    // 5️⃣ NON-STREAMING branch
+    const apiRes = await context.ollama.post('/chat', payload);
+    const { message } = apiRes.data;
+
+    messages.push(message);
+    saveMessageHistory(filePath, messages);
+
+    // 6️⃣ Finally return the JSON blob
+    return res.send({ uuid, message, model });
+  } catch (e) {
+    console.error('❌ Chat error:', e.message || e);
+    if (isStreaming) res.end();
+    else return res.status(500).send({ error: e.message });
   }
-
-  // 5️⃣ NON-STREAMING branch
-  const apiRes = await context.ollama.post('/chat', payload);
-  const { message } = apiRes.data;
-
-  messages.push(message);
-  saveMessageHistory(filePath, messages);
-
-  // 6️⃣ Finally return the JSON blob
-  return res.send({ uuid, message, model });
 };
-
-module.exports = { processChat };
 
 const getChatHistory = ({ context }) => {
   const { uuid } = context.chat;
