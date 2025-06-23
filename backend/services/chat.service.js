@@ -2,13 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const config = require('../config.json');
-const { websearchPrompts, withSearchResult } = require('../prompts/websearch.prompt');
 const { chatPrompts } = require('../prompts/chat.prompt');
-const { performWebSearch } = require('./web-search');
-
-const _canSearchInternet = ({ context }) => {
-  return config?.enableWebSearch || context?.chat?.enableWebSearch;
-};
+const { performWebSearch, willUseSearch, constructSearchTerm } = require('./web-search');
 
 const _cleanupChat = chat => {
   return chat.map(c => ({ role: c.role, content: c.content }));
@@ -72,8 +67,7 @@ const _processChatStream = async ({ context, res, payload, uuid, searchQuery, so
 
   res.socket?.on('close', () => {
     aborted = true;
-    console.log('🔌 Client disconnected (socket close)');
-    apiRes.data.destroy(); // Stop upstream stream
+    apiRes.data.destroy();
   });
 
   let assistantText = '';
@@ -107,94 +101,69 @@ const _processChatStream = async ({ context, res, payload, uuid, searchQuery, so
   });
 };
 
-const _generateWebSearch = async ({ context, prevMessages }) => {
-  try {
-    const messages = [...websearchPrompts, ...prevMessages];
-    const res = await context.ollama.post('/chat', {
-      model: context.chat.model,
-      messages,
-      think: false,
-      stream: false,
-    });
-    const { content } = res?.data?.message;
-    const { webSearch } = JSON.parse(content);
-
-    if (webSearch === 'NULL') return null;
-
-    return webSearch;
-  } catch (e) {
-    return null;
-  }
-};
-
-const withWebSearchRoles = async ({ context, messages }) => {
-  if (!_canSearchInternet({ context })) return [];
-
-  const toSearch = await _generateWebSearch({ context, prevMessages: messages });
-  if (!toSearch) return [];
-
-  try {
-    const webSearchRes = await performWebSearch({ context, toSearch });
-    const query = JSON.stringify(webSearchRes);
-    return {
-      searchQuery: toSearch,
-      sources: webSearchRes.map(m => m.url),
-      results: withSearchResult.map(m => ({
-        ...m,
-        content: m.content.replace('{query}', query).replace('{toSearch}', toSearch),
-      })),
-    };
-  } catch (e) {
-    console.error('❌ Failed to perform web search:', e.message);
-    return { searchQuery: false, results: [] };
-  }
-};
-
 const processChat = async ({ context, res }) => {
-  // 1️⃣ Prepare UUID, file paths, and load history
-  const uuid = context.chat.uuid || uuidv4();
-  const dirPath = path.resolve(context.root, './messages');
-  const filePath = path.resolve(dirPath, `${uuid}.log`);
-  if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
+  const isStreaming = context.chat.stream;
 
-  const messages = getMessageHistory(filePath);
-  messages.push({ role: 'user', content: context.chat.prompt });
+  try {
+    // 1️⃣ Prepare UUID, file paths, and load history
+    const uuid = context.chat.uuid || uuidv4();
+    const dirPath = path.resolve(context.root, './messages');
+    const filePath = path.resolve(dirPath, `${uuid}.log`);
+    if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
 
-  // 2️⃣ Build the payload
-  const searchRes = await withWebSearchRoles({ context, messages });
-  const searchResults = searchRes.results || [];
-  const model = context.chat.model || context.model;
-  const payload = {
-    model: context.chat.model,
-    messages: _cleanupChat(withSystemRoles({ context, messages, searchResults })),
-    stream: context.chat.stream,
-    think: context.chat.think,
-  };
+    const messages = getMessageHistory(filePath);
+    messages.push({ role: 'user', content: context.chat.prompt });
 
-  // 3️⃣ STREAMING branch
-  if (payload.stream) {
-    return await _processChatStream({
-      context,
-      res,
-      payload,
-      uuid,
-      searchQuery: searchRes?.searchQuery,
-      sources: searchRes?.sources,
-    });
+    // 2️⃣ Build the payload
+    let searchTerm = null;
+    const willSearchInternet = await willUseSearch({ context, messages });
+    if (willSearchInternet) searchTerm = await constructSearchTerm({ context, messages });
+
+    const searchResults = await performWebSearch({ context, toSearch: searchTerm });
+    const hasSearchResults = !!searchResults?.results?.length;
+
+    const model = context.chat.model || context.model;
+    const finalMessages = _cleanupChat(
+      withSystemRoles({ context, messages, searchResults: hasSearchResults ? searchResults.messages : [] })
+    );
+    const payload = {
+      model,
+      messages: finalMessages,
+      stream: context.chat.stream,
+      think: context.chat.think,
+      options: {
+        seed: 101,
+        temperature: 0.2,
+      },
+    };
+
+    // 3️⃣ STREAMING branch
+    if (isStreaming) {
+      return await _processChatStream({
+        context,
+        res,
+        payload,
+        uuid,
+        searchQuery: hasSearchResults ? searchResults?.searchQuery : undefined,
+        sources: hasSearchResults ? searchResults?.sources : undefined,
+      });
+    }
+
+    // 5️⃣ NON-STREAMING branch
+    const apiRes = await context.ollama.post('/chat', payload);
+    const { message } = apiRes.data;
+
+    messages.push(message);
+    saveMessageHistory(filePath, messages);
+
+    // 6️⃣ Finally return the JSON blob
+    return res.send({ uuid, message, model });
+  } catch (e) {
+    console.error('❌ Chat error:', e.message || e);
+    if (isStreaming) res.end();
+    else return res.status(500).send({ error: e.message });
   }
-
-  // 5️⃣ NON-STREAMING branch
-  const apiRes = await context.ollama.post('/chat', payload);
-  const { message } = apiRes.data;
-
-  messages.push(message);
-  saveMessageHistory(filePath, messages);
-
-  // 6️⃣ Finally return the JSON blob
-  return res.send({ uuid, message, model });
 };
-
-module.exports = { processChat };
 
 const getChatHistory = ({ context }) => {
   const { uuid } = context.chat;
