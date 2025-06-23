@@ -2,13 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const config = require('../config.json');
-const { websearchPrompts, withSearchResult } = require('../prompts/websearch.prompt');
 const { chatPrompts } = require('../prompts/chat.prompt');
-const { performWebSearch } = require('./web-search');
-
-const _canSearchInternet = ({ context }) => {
-  return config?.enableWebSearch || context?.chat?.enableWebSearch;
-};
+const { performWebSearch, willUseSearch, constructSearchTerm } = require('./web-search');
 
 const _cleanupChat = chat => {
   return chat.map(c => ({ role: c.role, content: c.content }));
@@ -106,49 +101,6 @@ const _processChatStream = async ({ context, res, payload, uuid, searchQuery, so
   });
 };
 
-const _generateWebSearch = async ({ context, prevMessages }) => {
-  try {
-    const messages = [...websearchPrompts, ...prevMessages];
-    const res = await context.ollama.post('/chat', {
-      model: context.chat.model,
-      messages,
-      think: false,
-      stream: false,
-    });
-    const { content } = res?.data?.message;
-    const { webSearch } = JSON.parse(content);
-
-    if (webSearch === 'NULL') return null;
-
-    return webSearch;
-  } catch (e) {
-    return null;
-  }
-};
-
-const withWebSearchRoles = async ({ context, messages }) => {
-  if (!_canSearchInternet({ context })) return [];
-
-  const toSearch = await _generateWebSearch({ context, prevMessages: messages });
-  if (!toSearch) return [];
-
-  try {
-    const webSearchRes = await performWebSearch({ context, toSearch });
-    const query = JSON.stringify(webSearchRes);
-    return {
-      searchQuery: toSearch,
-      sources: webSearchRes.map(m => m.url),
-      results: withSearchResult.map(m => ({
-        ...m,
-        content: m.content.replace('{query}', query).replace('{toSearch}', toSearch),
-      })),
-    };
-  } catch (e) {
-    console.error('❌ Failed to perform web search:', e.message);
-    return { searchQuery: false, results: [] };
-  }
-};
-
 const processChat = async ({ context, res }) => {
   // 1️⃣ Prepare UUID, file paths, and load history
   const uuid = context.chat.uuid || uuidv4();
@@ -160,14 +112,26 @@ const processChat = async ({ context, res }) => {
   messages.push({ role: 'user', content: context.chat.prompt });
 
   // 2️⃣ Build the payload
-  const searchRes = await withWebSearchRoles({ context, messages });
-  const searchResults = searchRes.results || [];
+  let searchTerm = null;
+  const willSearchInternet = await willUseSearch({ context });
+  if (willSearchInternet) searchTerm = await constructSearchTerm({ context });
+
+  const searchResults = await performWebSearch({ context, toSearch: searchTerm });
+  const hasSearchResults = !!searchResults?.results?.length;
+
   const model = context.chat.model || context.model;
+  const finalMessages = _cleanupChat(
+    withSystemRoles({ context, messages, searchResults: hasSearchResults ? searchResults.messages : [] })
+  );
   const payload = {
     model: context.chat.model,
-    messages: _cleanupChat(withSystemRoles({ context, messages, searchResults })),
+    messages: finalMessages,
     stream: context.chat.stream,
     think: context.chat.think,
+    options: {
+      seed: 101,
+      temperature: 0.2,
+    },
   };
 
   // 3️⃣ STREAMING branch
@@ -177,8 +141,8 @@ const processChat = async ({ context, res }) => {
       res,
       payload,
       uuid,
-      searchQuery: searchRes?.searchQuery,
-      sources: searchRes?.sources,
+      searchQuery: hasSearchResults ? searchResults?.searchQuery : undefined,
+      sources: hasSearchResults ? searchResults?.sources : undefined,
     });
   }
 
